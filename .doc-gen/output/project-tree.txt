@@ -1,0 +1,83 @@
+./
+├── data/
+│   ├── experiment_base.yaml
+│   ├── experiments.yaml
+│   ├── promote_staging.sql
+│   ├── schema_staging.sql
+│   └── voices.yaml
+├── .doc-gen/
+│   ├── backups/
+│   ├── defaults.yml
+│   ├── ignore-patterns.txt
+│   ├── manifest.yml
+│   └── output/
+├── docs/
+│   ├── design/
+│   │   ├── 06_srb_sentence_gen_design.md
+│   │   ├── handoff-2026-05-10.md
+│   │   └── handoff2026may10.md
+│   └── project-structure.md
+├── experiments/
+│   ├── 01_readme_gen/
+│   │   ├── config.yaml
+│   │   ├── prompts/
+│   │   │   ├── guided.md
+│   │   │   └── unguided.md
+│   │   └── results/
+│   ├── 02_linter_cleanup/
+│   │   ├── config.yaml
+│   │   ├── prompts/
+│   │   │   └── cleanup.md
+│   │   └── results/
+│   ├── 03_srb_animation/
+│   │   ├── config.yaml
+│   │   ├── prompts/
+│   │   │   ├── animation.md
+│   │   │   └── towel.md
+│   │   ├── results/
+│   │   └── srb_animation_config.yaml
+│   ├── 04_pkg_restructure/
+│   │   ├── config.yaml
+│   │   ├── prompts/
+│   │   │   └── restructure.md
+│   │   └── results/
+│   ├── 05_capstone_summary/
+│   │   ├── config.yaml
+│   │   ├── prompts/
+│   │   │   └── summary.md
+│   │   └── results/
+│   ├── 06_srb_sentence_gen/
+│   │   ├── config.yaml
+│   │   ├── corpora/
+│   │   │   ├── ankh_morpork_excerpt.txt
+│   │   │   ├── hhg_excerpt.txt
+│   │   │   └── terminator_excerpt.txt
+│   │   ├── prompts/
+│   │   │   ├── guided.md
+│   │   │   └── unguided.md
+│   │   └── results/
+│   ├── 07_capstone_summary/
+│   │   ├── config.yaml
+│   │   ├── prompts/
+│   │   │   └── summary.md
+│   │   └── results/
+│   └── 08_capstone_readme/
+│       ├── config.yaml
+│       ├── prompts/
+│       │   ├── annihilator.md
+│       │   ├── hitchhiker.md
+│       │   └── kafka.md
+│       └── results/
+├── .pylintrc
+├── pyproject.toml
+├── README.md
+├── scripts/
+└── src/
+    └── designing_gemma/
+        ├── config.py
+        ├── experiment_runner.py
+        ├── __init__.py
+        ├── ollama_client.py
+        └── prompt_loader.py
+
+36 directories, 45 files
