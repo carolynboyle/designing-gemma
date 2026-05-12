@@ -46,6 +46,11 @@ Repository = "https://github.com/carolynboyle/designing-gemma"
 where = ["src"]
 include = ["designing_gemma*"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v"
+
 # =============================================================================
 # Version note
 # =============================================================================

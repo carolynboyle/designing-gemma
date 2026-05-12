@@ -1,0 +1,270 @@
+======================================================================
+CHECK MODE - Dry Run Report
+======================================================================
+
+Manifest:     /home/carolyn/projects/designing-gemma/.doc-gen/manifest.yml
+Project Root: /home/carolyn/projects/designing-gemma
+Output Dir:   /home/carolyn/projects/designing-gemma/.doc-gen/output
+Total Files:  62
+
+======================================================================
+Files that would be generated:
+======================================================================
+
+✓ EXISTS
+  Source: .gitignore
+  Output: output/.gitignore.md
+
+✓ EXISTS
+  Source: .pylintrc
+  Output: output/.pylintrc.md
+
+✓ EXISTS
+  Source: .pytest_cache/.gitignore
+  Output: output/.pytest_cache/.gitignore.md
+
+✓ EXISTS
+  Source: .pytest_cache/CACHEDIR.TAG
+  Output: output/.pytest_cache/CACHEDIR.TAG.md
+
+✓ EXISTS
+  Source: .pytest_cache/README.md
+  Output: output/.pytest_cache/README.md.md
+
+✓ EXISTS
+  Source: .pytest_cache/v/cache/lastfailed
+  Output: output/.pytest_cache/v/cache/lastfailed.md
+
+✓ EXISTS
+  Source: .pytest_cache/v/cache/nodeids
+  Output: output/.pytest_cache/v/cache/nodeids.md
+
+✓ EXISTS
+  Source: README.md
+  Output: output/README.md.md
+
+✓ EXISTS
+  Source: data/experiment_base.yaml
+  Output: output/data/experiment_base.yaml.md
+
+✓ EXISTS
+  Source: data/experiments.yaml
+  Output: output/data/experiments.yaml.md
+
+✓ EXISTS
+  Source: data/voices.yaml
+  Output: output/data/voices.yaml.md
+
+✓ EXISTS
+  Source: docs/design/06_srb_sentence_gen_design.md
+  Output: output/docs/design/06_srb_sentence_gen_design.md.md
+
+✓ EXISTS
+  Source: docs/design/handoff-2026-05-10.md
+  Output: output/docs/design/handoff-2026-05-10.md.md
+
+✓ EXISTS
+  Source: docs/project-structure.md
+  Output: output/docs/project-structure.md.md
+
+✓ EXISTS
+  Source: experiments/01_readme_gen/config.yaml
+  Output: output/experiments/01_readme_gen/config.yaml.md
+
+✓ EXISTS
+  Source: experiments/01_readme_gen/prompts/guided.md
+  Output: output/experiments/01_readme_gen/prompts/guided.md.md
+
+✓ EXISTS
+  Source: experiments/01_readme_gen/prompts/unguided.md
+  Output: output/experiments/01_readme_gen/prompts/unguided.md.md
+
+✓ EXISTS
+  Source: experiments/01_readme_gen/results/.gitkeep
+  Output: output/experiments/01_readme_gen/results/.gitkeep.md
+
+✓ EXISTS
+  Source: experiments/02_linter_cleanup/config.yaml
+  Output: output/experiments/02_linter_cleanup/config.yaml.md
+
+✓ EXISTS
+  Source: experiments/02_linter_cleanup/prompts/cleanup.md
+  Output: output/experiments/02_linter_cleanup/prompts/cleanup.md.md
+
+✓ EXISTS
+  Source: experiments/02_linter_cleanup/results/.gitkeep
+  Output: output/experiments/02_linter_cleanup/results/.gitkeep.md
+
+✓ EXISTS
+  Source: experiments/03_srb_animation/config.yaml
+  Output: output/experiments/03_srb_animation/config.yaml.md
+
+✓ EXISTS
+  Source: experiments/03_srb_animation/prompts/animation.md
+  Output: output/experiments/03_srb_animation/prompts/animation.md.md
+
+✓ EXISTS
+  Source: experiments/03_srb_animation/prompts/towel.md
+  Output: output/experiments/03_srb_animation/prompts/towel.md.md
+
+✓ EXISTS
+  Source: experiments/03_srb_animation/results/.gitkeep
+  Output: output/experiments/03_srb_animation/results/.gitkeep.md
+
+✓ EXISTS
+  Source: experiments/04_pkg_restructure/config.yaml
+  Output: output/experiments/04_pkg_restructure/config.yaml.md
+
+✓ EXISTS
+  Source: experiments/04_pkg_restructure/prompts/restructure.md
+  Output: output/experiments/04_pkg_restructure/prompts/restructure.md.md
+
+✓ EXISTS
+  Source: experiments/04_pkg_restructure/results/.gitkeep
+  Output: output/experiments/04_pkg_restructure/results/.gitkeep.md
+
+✓ EXISTS
+  Source: experiments/05_capstone_summary/config.yaml
+  Output: output/experiments/05_capstone_summary/config.yaml.md
+
+✓ EXISTS
+  Source: experiments/05_capstone_summary/prompts/summary.md
+  Output: output/experiments/05_capstone_summary/prompts/summary.md.md
+
+✓ EXISTS
+  Source: experiments/05_capstone_summary/results/.gitkeep
+  Output: output/experiments/05_capstone_summary/results/.gitkeep.md
+
+✓ EXISTS
+  Source: experiments/06_srb_sentence_gen/config.yaml
+  Output: output/experiments/06_srb_sentence_gen/config.yaml.md
+
+✓ EXISTS
+  Source: experiments/06_srb_sentence_gen/corpora/ankh_morpork_excerpt.txt
+  Output: output/experiments/06_srb_sentence_gen/corpora/ankh_morpork_excerpt.txt.md
+
+✓ EXISTS
+  Source: experiments/06_srb_sentence_gen/corpora/hhg_excerpt.txt
+  Output: output/experiments/06_srb_sentence_gen/corpora/hhg_excerpt.txt.md
+
+✓ EXISTS
+  Source: experiments/06_srb_sentence_gen/corpora/terminator_excerpt.txt
+  Output: output/experiments/06_srb_sentence_gen/corpora/terminator_excerpt.txt.md
+
+✓ EXISTS
+  Source: experiments/06_srb_sentence_gen/prompts/guided.md
+  Output: output/experiments/06_srb_sentence_gen/prompts/guided.md.md
+
+✓ EXISTS
+  Source: experiments/06_srb_sentence_gen/prompts/unguided.md
+  Output: output/experiments/06_srb_sentence_gen/prompts/unguided.md.md
+
+✓ EXISTS
+  Source: experiments/06_srb_sentence_gen/results/.gitkeep
+  Output: output/experiments/06_srb_sentence_gen/results/.gitkeep.md
+
+✓ EXISTS
+  Source: experiments/07_capstone_summary/config.yaml
+  Output: output/experiments/07_capstone_summary/config.yaml.md
+
+✓ EXISTS
+  Source: experiments/07_capstone_summary/prompts/summary.md
+  Output: output/experiments/07_capstone_summary/prompts/summary.md.md
+
+✓ EXISTS
+  Source: experiments/07_capstone_summary/results/.gitkeep
+  Output: output/experiments/07_capstone_summary/results/.gitkeep.md
+
+✓ EXISTS
+  Source: experiments/08_capstone_readme/config.yaml
+  Output: output/experiments/08_capstone_readme/config.yaml.md
+
+✓ EXISTS
+  Source: experiments/08_capstone_readme/prompts/annihilator.md
+  Output: output/experiments/08_capstone_readme/prompts/annihilator.md.md
+
+✓ EXISTS
+  Source: experiments/08_capstone_readme/prompts/hitchhiker.md
+  Output: output/experiments/08_capstone_readme/prompts/hitchhiker.md.md
+
+✓ EXISTS
+  Source: experiments/08_capstone_readme/prompts/kafka.md
+  Output: output/experiments/08_capstone_readme/prompts/kafka.md.md
+
+✓ EXISTS
+  Source: experiments/08_capstone_readme/results/.gitkeep
+  Output: output/experiments/08_capstone_readme/results/.gitkeep.md
+
+✓ EXISTS
+  Source: pyproject.toml
+  Output: output/pyproject.toml.md
+
+✓ EXISTS
+  Source: src/designing_gemma/__init__.py
+  Output: output/src/designing_gemma/__init__.py.md
+
+✓ EXISTS
+  Source: src/designing_gemma/config.py
+  Output: output/src/designing_gemma/config.py.md
+
+✓ EXISTS
+  Source: src/designing_gemma/experiment_runner.py
+  Output: output/src/designing_gemma/experiment_runner.py.md
+
+✓ EXISTS
+  Source: src/designing_gemma/ollama_client.py
+  Output: output/src/designing_gemma/ollama_client.py.md
+
+✓ EXISTS
+  Source: src/designing_gemma/prompt_loader.py
+  Output: output/src/designing_gemma/prompt_loader.py.md
+
+✓ EXISTS
+  Source: src/designing_gemma.egg-info/PKG-INFO
+  Output: output/src/designing_gemma.egg-info/PKG-INFO.md
+
+✓ EXISTS
+  Source: src/designing_gemma.egg-info/SOURCES.txt
+  Output: output/src/designing_gemma.egg-info/SOURCES.txt.md
+
+✓ EXISTS
+  Source: src/designing_gemma.egg-info/dependency_links.txt
+  Output: output/src/designing_gemma.egg-info/dependency_links.txt.md
+
+✓ EXISTS
+  Source: src/designing_gemma.egg-info/entry_points.txt
+  Output: output/src/designing_gemma.egg-info/entry_points.txt.md
+
+✓ EXISTS
+  Source: src/designing_gemma.egg-info/requires.txt
+  Output: output/src/designing_gemma.egg-info/requires.txt.md
+
+✓ EXISTS
+  Source: src/designing_gemma.egg-info/top_level.txt
+  Output: output/src/designing_gemma.egg-info/top_level.txt.md
+
+✓ EXISTS
+  Source: tests/conftest.py
+  Output: output/tests/conftest.py.md
+
+✓ EXISTS
+  Source: tests/test_config.py
+  Output: output/tests/test_config.py.md
+
+✓ EXISTS
+  Source: tests/test_ollama_client.py
+  Output: output/tests/test_ollama_client.py.md
+
+✓ EXISTS
+  Source: tests/test_prompt_loader.py
+  Output: output/tests/test_prompt_loader.py.md
+
+======================================================================
+Summary:
+======================================================================
+Total files in manifest: 62
+Source files exist:      62
+Source files missing:    0
+
+No files were written (dry-run mode)
+======================================================================

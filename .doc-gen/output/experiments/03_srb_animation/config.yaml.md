@@ -2,7 +2,7 @@
 
 **Path:** experiments/03_srb_animation/config.yaml
 **Syntax:** yaml
-**Generated:** 2026-05-12 08:55:21
+**Generated:** 2026-05-12 13:04:48
 
 ```yaml
 # =============================================================================

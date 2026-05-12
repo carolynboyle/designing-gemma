@@ -2,7 +2,7 @@
 
 **Path:** pyproject.toml
 **Syntax:** toml
-**Generated:** 2026-05-12 08:55:21
+**Generated:** 2026-05-12 13:04:48
 
 ```toml
 [build-system]
@@ -52,6 +52,11 @@ Repository = "https://github.com/carolynboyle/designing-gemma"
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["designing_gemma*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v"
 
 # =============================================================================
 # Version note
