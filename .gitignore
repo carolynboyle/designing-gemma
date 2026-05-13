@@ -12,7 +12,8 @@ experiments/*/results/*
 
 # Environment
 .env
-.env.*
+.env.local
+*.local.env
 
 # Editor
 .vscode/

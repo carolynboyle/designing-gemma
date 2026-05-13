@@ -5,13 +5,17 @@
 # =============================================================================
 
 import json
+import os
 import time
 from typing import Iterator
 
 import requests
 
 
-OLLAMA_BASE_URL = "http://localhost:11434"
+
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost")
+OLLAMA_PORT = os.getenv("OLLAMA_PORT", "11434")
+OLLAMA_BASE_URL = f"http://{OLLAMA_HOST}:{OLLAMA_PORT}"
 GENERATE_ENDPOINT = f"{OLLAMA_BASE_URL}/api/generate"
 
 
