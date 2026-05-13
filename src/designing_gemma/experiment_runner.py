@@ -175,6 +175,10 @@ def _run_experiment(experiment_entry: dict) -> bool:
         else [None]
     )
 
+    # Build base context — available to all prompts in this experiment
+    repos = config.get("repos", {})
+    base_context = {"repos": repos} if repos else {}
+
     for prompt_def in prompts:
         prompt_file  = prompt_def.get("file")
         prompt_label = prompt_def.get("label", prompt_file)
@@ -182,8 +186,8 @@ def _run_experiment(experiment_entry: dict) -> bool:
         for corpus in corpus_list:
             corpus_label = corpus["label"] if corpus else None
 
-            # Build Jinja2 context
-            context = {}
+            # Build Jinja2 context — start from base, add corpus if present
+            context = dict(base_context)
             if corpus:
                 try:
                     corpus_text = load_corpus(

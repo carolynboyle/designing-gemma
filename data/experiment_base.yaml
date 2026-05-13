@@ -14,6 +14,17 @@ experiment:
   target_repo: ~                 # required — path or URL of repo under test
   target_branch: ~               # optional — null means use current branch
 
+  # =============================================================================
+# repos
+# Container-side paths to target repositories, mounted via docker-compose.
+# These are injected into every prompt context as {{ repos.dev_utils }} etc.
+# Paths are stable inside the container regardless of host OS.
+# =============================================================================
+
+repos:
+  dev_utils: /repos/dev-utils
+  sr_barbara: /repos/sr-barbara
+
 model:
   models:                        # run experiment against each model in list
     - name: gemma4:e2b
