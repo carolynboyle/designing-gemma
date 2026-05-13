@@ -186,13 +186,14 @@ def _run_experiment(experiment_entry: dict) -> bool:
         for corpus in corpus_list:
             corpus_label = corpus["label"] if corpus else None
 
-            # Build Jinja2 context — start from base, add corpus if present
+             # Build Jinja2 context — start from base, add corpus if present
             context = dict(base_context)
             if corpus:
                 try:
-                    corpus_text = load_corpus(
-                        corpus["source"], corpus["source_type"]
-                    )
+                    source = corpus["source"]
+                    if corpus["source_type"] == "file":
+                        source = str(experiment_dir / source)
+                    corpus_text = load_corpus(source, corpus["source_type"])
                     context["source_text"] = corpus_text
                 except PromptError as e:
                     print(f"  ERROR loading corpus {corpus_label}: {e}")
@@ -286,8 +287,8 @@ def main() -> None:
     print("\nChecking Ollama connection...")
     if not check_connection():
         print(
-            f"  ERROR: Cannot reach Ollama at http://localhost:11434\n"
-            f"  Make sure Ollama is running: ollama serve\n"
+            "  ERROR: Cannot reach Ollama at http://localhost:11434\n"
+            "  Make sure Ollama is running: ollama serve\n"
         )
         sys.exit(1)
     print("  Ollama is running.")
