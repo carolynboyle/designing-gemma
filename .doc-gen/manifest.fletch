@@ -1,14 +1,14 @@
-# Generated: 2026-05-12 13:05:53
+# Generated: 2026-05-13 07:46:02
 # Repo: https://github.com/carolynboyle/designing-gemma
 # Branch: main
 # URL type: raw
 # Version: v0.1.0
-# Files: 62
+# Files: 69
 
 repo: https://github.com/carolynboyle/designing-gemma
 branch: main
 url_type: raw
-generated: '2026-05-12 13:05:53'
+generated: '2026-05-13 07:46:02'
 version: 0.1.0
 files:
 - path: .gitignore
@@ -25,6 +25,8 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/.pytest_cache/v/cache/lastfailed
 - path: .pytest_cache/v/cache/nodeids
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/.pytest_cache/v/cache/nodeids
+- path: Dockerfile
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/Dockerfile
 - path: README.md
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/README.md
 - path: data/experiment_base.yaml
@@ -33,10 +35,16 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/data/experiments.yaml
 - path: data/voices.yaml
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/data/voices.yaml
+- path: docker-compose.yml
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docker-compose.yml
 - path: docs/design/06_srb_sentence_gen_design.md
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/design/06_srb_sentence_gen_design.md
+- path: docs/design/DOCKER_SETUP.md
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/design/DOCKER_SETUP.md
 - path: docs/design/handoff-2026-05-10.md
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/design/handoff-2026-05-10.md
+- path: docs/design/handoff-2026-05-12.md
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/design/handoff-2026-05-12.md
 - path: docs/project-structure.md
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/project-structure.md
 - path: experiments/01_readme_gen/config.yaml
@@ -103,6 +111,10 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/experiments/08_capstone_readme/prompts/kafka.md
 - path: experiments/08_capstone_readme/results/.gitkeep
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/experiments/08_capstone_readme/results/.gitkeep
+- path: experiments/_prompt_templates/gemini_prompt_for_creative_prompts.md
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/experiments/_prompt_templates/gemini_prompt_for_creative_prompts.md
+- path: ollama_client.py
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/ollama_client.py
 - path: pyproject.toml
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/pyproject.toml
 - path: src/designing_gemma/__init__.py
@@ -135,3 +147,5 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/tests/test_ollama_client.py
 - path: tests/test_prompt_loader.py
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/tests/test_prompt_loader.py
+- path: ~dgtree.txt
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/~dgtree.txt

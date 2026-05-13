@@ -1,6 +1,6 @@
 # ollama_client.py
 
-**Path:** src/designing_gemma/ollama_client.py
+**Path:** ollama_client.py
 **Syntax:** python
 **Generated:** 2026-05-13 07:45:45
 
@@ -12,13 +12,15 @@
 # =============================================================================
 
 import json
+import os
 import time
 from typing import Iterator
 
 import requests
 
 
-OLLAMA_BASE_URL = "http://localhost:11434"
+
+OLLAMA_BASE_URL = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 GENERATE_ENDPOINT = f"{OLLAMA_BASE_URL}/api/generate"
 
 

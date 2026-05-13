@@ -2,7 +2,7 @@
 
 **Path:** experiments/06_srb_sentence_gen/config.yaml
 **Syntax:** yaml
-**Generated:** 2026-05-12 13:04:48
+**Generated:** 2026-05-13 07:45:45
 
 ```yaml
 # =============================================================================

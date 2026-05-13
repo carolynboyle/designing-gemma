@@ -1,6 +1,6 @@
-# Generated: 2026-05-13 07:45:38
+# Generated: 2026-05-12 13:05:14
 # Project: /home/carolyn/projects/designing-gemma
-# Files: 69
+# Files: 62
 
 version: 1
 documents:
@@ -11,16 +11,12 @@ documents:
 - path: .pytest_cache/README.md
 - path: .pytest_cache/v/cache/lastfailed
 - path: .pytest_cache/v/cache/nodeids
-- path: Dockerfile
 - path: README.md
 - path: data/experiment_base.yaml
 - path: data/experiments.yaml
 - path: data/voices.yaml
-- path: docker-compose.yml
 - path: docs/design/06_srb_sentence_gen_design.md
-- path: docs/design/DOCKER_SETUP.md
 - path: docs/design/handoff-2026-05-10.md
-- path: docs/design/handoff-2026-05-12.md
 - path: docs/project-structure.md
 - path: experiments/01_readme_gen/config.yaml
 - path: experiments/01_readme_gen/prompts/guided.md
@@ -54,8 +50,6 @@ documents:
 - path: experiments/08_capstone_readme/prompts/hitchhiker.md
 - path: experiments/08_capstone_readme/prompts/kafka.md
 - path: experiments/08_capstone_readme/results/.gitkeep
-- path: experiments/_prompt_templates/gemini_prompt_for_creative_prompts.md
-- path: ollama_client.py
 - path: pyproject.toml
 - path: src/designing_gemma/__init__.py
 - path: src/designing_gemma/config.py
@@ -72,4 +66,3 @@ documents:
 - path: tests/test_config.py
 - path: tests/test_ollama_client.py
 - path: tests/test_prompt_loader.py
-- path: ~dgtree.txt
