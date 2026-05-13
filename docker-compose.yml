@@ -25,7 +25,7 @@ services:
     
     # Point to Ollama on the host
     environment:
-      OLLAMA_HOST: http://host.podman.internal:11434
+      OLLAMA_HOST: http://host.containers.internal:11434
     
     # Keep container alive for interactive prompts
     stdin_open: true
