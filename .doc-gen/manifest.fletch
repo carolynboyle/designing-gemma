@@ -1,16 +1,22 @@
-# Generated: 2026-05-13 07:46:02
+# Generated: 2026-05-13 22:16:20
 # Repo: https://github.com/carolynboyle/designing-gemma
 # Branch: main
 # URL type: raw
 # Version: v0.1.0
-# Files: 69
+# Files: 82
 
 repo: https://github.com/carolynboyle/designing-gemma
 branch: main
 url_type: raw
-generated: '2026-05-13 07:46:02'
+generated: '2026-05-13 22:16:20'
 version: 0.1.0
 files:
+- path: .env.example
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/.env.example
+- path: .env.linux.example
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/.env.linux.example
+- path: .env.mac.example
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/.env.mac.example
 - path: .gitignore
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/.gitignore
 - path: .pylintrc
@@ -33,10 +39,28 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/data/experiment_base.yaml
 - path: data/experiments.yaml
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/data/experiments.yaml
+- path: data/voice_instructions/annihilator.txt
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/data/voice_instructions/annihilator.txt
+- path: data/voice_instructions/hitchhiker.txt
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/data/voice_instructions/hitchhiker.txt
+- path: data/voice_instructions/kafka.txt
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/data/voice_instructions/kafka.txt
+- path: data/voice_instructions/pratchett.txt
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/data/voice_instructions/pratchett.txt
 - path: data/voices.yaml
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/data/voices.yaml
 - path: docker-compose.yml
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docker-compose.yml
+- path: docs/change/designing-gemma-corpus-path-fix.md
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/change/designing-gemma-corpus-path-fix.md
+- path: docs/change/designing-gemma-env-fix.md
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/change/designing-gemma-env-fix.md
+- path: docs/change/designing-gemma-repo-context.md
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/change/designing-gemma-repo-context.md
+- path: docs/change/designing-gemma-size-overrides.md
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/change/designing-gemma-size-overrides.md
+- path: docs/change/srb_animation_config.md
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/change/srb_animation_config.md
 - path: docs/design/06_srb_sentence_gen_design.md
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/design/06_srb_sentence_gen_design.md
 - path: docs/design/DOCKER_SETUP.md
@@ -45,6 +69,8 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/design/handoff-2026-05-10.md
 - path: docs/design/handoff-2026-05-12.md
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/design/handoff-2026-05-12.md
+- path: docs/post/post-notes.md
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/post/post-notes.md
 - path: docs/project-structure.md
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/project-structure.md
 - path: experiments/01_readme_gen/config.yaml
@@ -113,8 +139,6 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/experiments/08_capstone_readme/results/.gitkeep
 - path: experiments/_prompt_templates/gemini_prompt_for_creative_prompts.md
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/experiments/_prompt_templates/gemini_prompt_for_creative_prompts.md
-- path: ollama_client.py
-  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/ollama_client.py
 - path: pyproject.toml
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/pyproject.toml
 - path: src/designing_gemma/__init__.py
@@ -127,6 +151,10 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/src/designing_gemma/ollama_client.py
 - path: src/designing_gemma/prompt_loader.py
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/src/designing_gemma/prompt_loader.py
+- path: src/designing_gemma/repo_reader.py
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/src/designing_gemma/repo_reader.py
+- path: src/designing_gemma/skeleton_reader.py
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/src/designing_gemma/skeleton_reader.py
 - path: src/designing_gemma.egg-info/PKG-INFO
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/src/designing_gemma.egg-info/PKG-INFO
 - path: src/designing_gemma.egg-info/SOURCES.txt
@@ -147,5 +175,3 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/tests/test_ollama_client.py
 - path: tests/test_prompt_loader.py
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/tests/test_prompt_loader.py
-- path: ~dgtree.txt
-  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/~dgtree.txt

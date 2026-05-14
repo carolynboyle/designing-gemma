@@ -2,7 +2,7 @@
 
 **Path:** experiments/04_pkg_restructure/prompts/restructure.md
 **Syntax:** markdown
-**Generated:** 2026-05-13 07:45:45
+**Generated:** 2026-05-13 22:16:06
 
 ```markdown
 # Package Restructure Task

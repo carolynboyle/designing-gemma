@@ -2,7 +2,7 @@
 
 **Path:** docker-compose.yml
 **Syntax:** yaml
-**Generated:** 2026-05-13 07:45:45
+**Generated:** 2026-05-13 22:16:06
 
 ```yaml
 # =============================================================================
@@ -32,7 +32,8 @@ services:
     
     # Point to Ollama on the host
     environment:
-      OLLAMA_HOST: http://host.containers.internal:11434
+      OLLAMA_HOST: ${OLLAMA_HOST:-localhost}
+      OLLAMA_PORT: ${OLLAMA_PORT:-11434}
     
     # Keep container alive for interactive prompts
     stdin_open: true

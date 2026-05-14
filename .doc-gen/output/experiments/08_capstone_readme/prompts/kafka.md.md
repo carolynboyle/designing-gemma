@@ -2,7 +2,7 @@
 
 **Path:** experiments/08_capstone_readme/prompts/kafka.md
 **Syntax:** markdown
-**Generated:** 2026-05-13 07:45:45
+**Generated:** 2026-05-13 22:16:06
 
 ```markdown
 # Task: The Bureaucratic Report of Gregor Gemma

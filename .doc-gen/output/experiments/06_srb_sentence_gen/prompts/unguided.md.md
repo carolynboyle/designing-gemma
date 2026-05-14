@@ -2,7 +2,7 @@
 
 **Path:** experiments/06_srb_sentence_gen/prompts/unguided.md
 **Syntax:** markdown
-**Generated:** 2026-05-13 07:45:45
+**Generated:** 2026-05-13 22:16:06
 
 ```markdown
 # Sentence Generation Task (Unguided)

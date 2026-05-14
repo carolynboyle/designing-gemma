@@ -2,7 +2,7 @@
 
 **Path:** pyproject.toml
 **Syntax:** toml
-**Generated:** 2026-05-13 07:45:45
+**Generated:** 2026-05-13 22:16:06
 
 ```toml
 [build-system]
@@ -43,7 +43,8 @@ dev = [
 ]
 
 [project.scripts]
-designing-gemma = "designing_gemma.experiment_runner:main"
+designing-gemma      = "designing_gemma.experiment_runner:main"
+designing-gemma-skel = "designing_gemma.skeleton_reader:main"
 
 [project.urls]
 Homepage = "https://github.com/carolynboyle/designing-gemma"

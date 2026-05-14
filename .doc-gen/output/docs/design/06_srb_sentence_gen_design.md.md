@@ -2,205 +2,292 @@
 
 **Path:** docs/design/06_srb_sentence_gen_design.md
 **Syntax:** markdown
-**Generated:** 2026-05-13 07:45:45
+**Generated:** 2026-05-13 22:16:06
 
 ```markdown
-# designing-gemma: Canonical Project Structure
-
-Last updated: 2026-05-09
-
-This document is the authoritative reference for the project directory structure.
-Update it when the structure changes. Do not let it drift from the actual repo.
+# Design Doc: skeleton_reader.py and repo_reader.py
+## designing-gemma
 
 ---
 
-## Full Directory Tree
+## Problem Statement
 
-```
-designing-gemma/
-├── src/
-│   └── gemma4_experiment/
-│       ├── __init__.py
-│       ├── ollama_client.py       # Ollama API client — all model calls go here
-│       ├── config.py              # Config loader — merges base + experiment config
-│       ├── prompt_loader.py       # Jinja2 prompt templating — injects file contents
-│       └── experiment_runner.py  # Orchestrates a single experiment run end-to-end
-├── experiments/
-│   ├── 01_readme_gen/             # LOWEST RISK — read only, no code changes
-│   │   ├── prompts/
-│   │   │   ├── unguided.md        # No structural hints — tests Gemma's inference
-│   │   │   └── guided.md          # Full spec provided — tests instruction following
-│   │   ├── config.yaml
-│   │   └── results/               # Staged output + run_log.yaml land here
-│   │
-│   ├── 02_linter_cleanup/         # LOW RISK — mechanical fixes, staging required
-│   │   ├── prompts/
-│   │   │   └── cleanup.md         # Per-file cleanup — uses Jinja2 template variables
-│   │   ├── config.yaml
-│   │   └── results/
-│   │
-│   ├── 03_srb_animation/          # MEDIUM RISK — additive JS/CSS, separate repo
-│   │   ├── prompts/
-│   │   │   ├── animation.md       # Nun sprite animation for three game events
-│   │   │   └── towel.md           # The towel. The towel knows why.
-│   │   ├── config.yaml
-│   │   └── results/
-│   │
-│   ├── 04_pkg_restructure/        # HIGH RISK — breaks editable installs if wrong
-│   │   ├── prompts/
-│   │   │   └── restructure.md     # Flat → src layout, one package at a time
-│   │   ├── config.yaml
-│   │   └── results/
-│   │
-│   ├── 05_capstone_summary/       # Auto-triggered after runs — factual, no voice
-│   │   ├── prompts/
-│   │   │   └── summary.md         # Neutral summary of what ran and what it produced
-│   │   ├── config.yaml
-│   │   └── results/
-│   │
-│   ├── 06_srb_sentence_gen/       # NONE — staged SQL only, human applies via Adminer
-│   │   ├── prompts/
-│   │   │   ├── unguided.md        # Schema inferred from worked examples only
-│   │   │   └── guided.md          # Full schema spec + constraints provided
-│   │   ├── corpora/
-│   │   │   ├── hhg_excerpt.txt    # Hitchhiker's Guide — file, not public domain
-│   │   │   ├── terminator_excerpt.txt  # Terminator screenplay — file, short excerpt
-│   │   │   └── ankh_morpork_excerpt.txt  # Future — pending Pratchett voice
-│   │   ├── config.yaml
-│   │   └── results/               # Staged SQL blocks — never auto-applied
-│   │
-│   ├── 07_capstone_summary/       # Auto-triggered after all experiments — factual
-│   │   ├── prompts/
-│   │   │   └── summary.md
-│   │   ├── config.yaml
-│   │   └── results/
-│   │
-│   └── 08_capstone_readme/        # Human-initiated — voiced, runs last
-│       ├── prompts/
-│       │   ├── hitchhiker.md      # Douglas Adams narrator — signs: "Mostly Harmless"
-│       │   ├── kafka.md           # Bureaucratic dread — signs: "For Gregor Samsa"
-│       │   └── annihilator.md     # Cynical precision — signs: "Processed. Terminated."
-│       ├── config.yaml
-│       └── results/
-│
-├── scripts/                       # Standalone utility scripts — no experiment logic
-│
-├── data/
-│   ├── experiment_base.yaml       # Base config inherited by all experiments
-│   ├── experiments.yaml           # Master experiment registry
-│   └── voices.yaml                # Voice definitions for capstone and summary
-│
-├── pyproject.toml                 # Single source of truth for package version
-└── README.md                      # Written by Gemma. Signed. The towel is mentioned.
+Gemma cannot read the filesystem. Prompts that instruct it to "walk the repo"
+or "read the source files" produce hallucinated output. To give Gemma accurate
+information about a codebase, the runner must read the files and inject their
+contents as text into the prompt before calling the model.
+
+Injecting full file contents creates a second problem: token budget. A modest
+Python package can easily contain 50,000+ characters of source code. Gemma's
+useful context window is far smaller, and padding it with implementation details
+it doesn't need (for tasks like README generation) degrades output quality.
+
+The solution is a two-stage pipeline:
+
+1. **`skeleton_reader.py`** — reads a doc-gen `manifest.yml`, extracts structural
+   summaries from Python source files using the `ast` module, and writes a
+   `manifest.skel` file containing imports, class names, and function signatures.
+   Non-Python files are included as-is if small, or flagged for exclusion.
+
+2. **`repo_reader.py`** — reads `manifest.skel` and formats its contents as a
+   prompt-injectable text block for use as a Jinja2 template variable.
+
+Gemma never sees raw source files. It receives a compact architectural outline
+that is sufficient for README generation, animation prompt context, schema
+analysis, and other experiment tasks.
+
+---
+
+## Prior Art: doc-gen scanner.py
+
+`scanner.py` in the doc-gen package (dev-utils) solves the related problem of
+walking a filesystem and collecting files for documentation. Key elements
+borrowed conceptually for this design:
+
+- `os.walk` with in-place directory pruning (`dirnames[:] = [...]`) to avoid
+  descending into ignored directories
+- Binary file detection via UTF-8 read attempt
+- Ignore pattern loading from a centralized patterns file
+- Stats tracking for scan reporting
+
+**Key differences in this implementation:**
+
+- Input is a pre-existing `manifest.yml` (generated by doc-gen), not a live
+  filesystem walk. File selection is delegated entirely to doc-gen and the human
+  who ran it. `skeleton_reader.py` does not walk directories.
+- Output is structured YAML (`manifest.skel`), not a file list. Content
+  extraction (ast parsing) replaces content collection.
+- No interactive prompting. This is a batch transformation, not a user-facing
+  tool.
+- Token budget awareness is built in. `scanner.py` has no concept of output
+  size; `repo_reader.py` enforces a configurable character cap.
+
+**Notes for future filekit / skeletonkit development:**
+
+The combination of doc-gen's filesystem walking and this package's ast extraction
+represents a complete pipeline for codebase summarization:
+
+  walk → select → extract skeleton → format for consumption
+
+A future `filekit` or `skeletonkit` dev-utils tool would unify these stages,
+accept a repo path directly, and produce a ready-to-inject context block without
+requiring doc-gen as a prerequisite. The `manifest.yml` intermediary is a
+pragmatic coupling for now — it works because doc-gen is already in the
+ecosystem — but a standalone tool should not require it.
+
+The `ast` approach is Python-specific. A production filekit would need language
+detection and per-language skeleton strategies (e.g. regex-based for shell
+scripts, YAML structure summarization for config files).
+
+---
+
+## manifest.skel Format
+
+YAML. Lives in the target repo at `.doc-gen/manifest.skel` alongside
+`manifest.yml`. Generated by `skeleton_reader.py`, consumed by `repo_reader.py`.
+
+```yaml
+# Generated by designing-gemma skeleton_reader
+# Source: .doc-gen/manifest.yml
+# Generated: 2026-05-13 10:00:00
+
+files:
+  - path: python/fletcher/fletcher.py
+    type: python
+    imports:
+      - pathlib.Path
+      - yaml
+      - requests
+    classes: []
+    functions:
+      - build_url_manifest(paths, repo, branch, url_type)
+      - write_manifest(manifest, output_path)
+      - _detect_branch()
+
+  - path: python/fletcher/__init__.py
+    type: python
+    imports: []
+    classes: []
+    functions: []
+
+  - path: python/fletcher/pyproject.toml
+    type: non-python
+    size_chars: 842
+    included: true
+    content: |
+      [build-system]
+      requires = ["setuptools>=61.0"]
+      ...
+
+  - path: python/dbkit/connection.py
+    type: non-python
+    size_chars: 18500
+    included: false
+    reason: exceeds_size_limit
 ```
 
 ---
 
-## Experiment Numbering
+## skeleton_reader.py Design
 
-Folders are prefixed with a two-digit number indicating the recommended run order.
-Lower numbers are safer. Higher numbers depend on lower ones being complete.
+**Location:** `src/designing_gemma/skeleton_reader.py`
 
-| # | Experiment | Risk | Depends On |
-|---|------------|------|------------|
-| 01 | readme_gen | None — read only | Nothing |
-| 02 | linter_cleanup | Low — mechanical fixes | Nothing |
-| 03 | srb_animation | Medium — separate repo | Nothing |
-| 04 | pkg_restructure | High — breaks installs | Nothing, but run last among code tasks |
-| 05 | capstone_summary | None — generative | Any completed experiments |
-| 06 | srb_sentence_gen | None — staged SQL only | Nothing |
-| 07 | capstone_summary | None — generative | All generative experiments complete |
-| 08 | capstone_readme | None — generative | All experiments complete |
+**Inputs:**
+- Path to target repo
+- Path to `manifest.yml` within that repo (default: `.doc-gen/manifest.yml`)
+- Size limit for non-Python file inclusion (default: 5000 chars)
 
-Numbering is assigned manually for now. Future Designing Gemma webapp will
-assign prefixes automatically based on `max(existing) + 1`.
+**Processing per file:**
 
----
+For `.py` files:
+- Parse with `ast.parse()`
+- Extract: all `import` and `from...import` statements
+- Extract: all top-level class names
+- Extract: all top-level function names with argument signatures
+- On `SyntaxError`: record as `type: python_unparseable`, skip
 
-## Corpus Sources (06_srb_sentence_gen)
+For non-Python files:
+- Read content
+- If `size_chars <= limit`: include full content in `manifest.skel`
+- If `size_chars > limit`: record as `included: false, reason: exceeds_size_limit`
+- On read error / binary detection: record as `included: false, reason: unreadable`
 
-| Label | Voice | Source | Type | Status |
-|-------|-------|--------|------|--------|
-| hitchhiker | Hitchhiker | HHG excerpt — library/preview copy | file | active |
-| metamorphosis | Kafka | Project Gutenberg — public domain | url | active |
-| terminator | Annihilator | Screenplay excerpt — personal use | file | active |
-| ankh_morpork | Pratchett | TBD | file | pending |
+**Output:** writes `manifest.skel` to same directory as `manifest.yml`
 
-Metamorphosis URL: `https://www.gutenberg.org/files/5200/5200-0.txt`
+**Returns:** dict with keys `files_processed`, `python_files`, `non_python_included`,
+`non_python_excluded`, `errors`
 
 ---
 
-## Results Layout
+## repo_reader.py Design
 
-Every experiment's `results/` folder contains:
+**Location:** `src/designing_gemma/repo_reader.py`
+
+**Inputs:**
+- Path to `manifest.skel`
+- Max total characters to inject (default: configurable per experiment)
+
+**Output format** — a single string suitable for `{{ repo_context }}` injection:
 
 ```
-results/
-├── run_log.yaml                   # Append-only log of every run
-├── run_001_e2b_<label>.md         # Staged output — never written directly to target repo
-├── run_002_e4b_<label>.md
-└── ...
+=== python/fletcher/fletcher.py ===
+[Python]
+imports: pathlib.Path, yaml, requests
+classes: (none)
+functions:
+  build_url_manifest(paths, repo, branch, url_type)
+  write_manifest(manifest, output_path)
+  _detect_branch()
+
+=== python/fletcher/pyproject.toml ===
+[TOML - full content]
+[build-system]
+requires = ["setuptools>=61.0"]
+...
+
+=== python/dbkit/connection.py ===
+[excluded: exceeds size limit]
+
 ```
 
-For 06_srb_sentence_gen, output files are staged SQL:
-```
-results/
-├── run_log.yaml
-├── run_001_e2b_unguided_hitchhiker.sql
-├── run_002_e4b_unguided_hitchhiker.sql
-└── ...
-```
+**Token budget handling:**
+- Accumulate character count as files are added
+- When budget is reached: stop adding files, append a note:
+  `[output truncated: {n} files omitted due to character limit]`
+- Log which files were omitted at INFO level
+- Never silently truncate mid-file — always complete or skip a file
 
-Output files are named: `run_{id}_{model}_{prompt_label}_{corpus_label}.sql`
+**Returns:** dict with keys `context_text`, `files_included`, `files_excluded`,
+`total_chars`
 
 ---
 
-## Key Design Decisions
+## Integration with experiment_runner.py
 
-**Staging is mandatory.** Output never goes directly to the target repo or
-database. The Python script writes to `results/`, the human reviews, then
-applies manually or with a separate apply script.
+The runner gains a new step before prompt rendering. If the experiment config
+specifies a `repo_read` block:
 
-**YAML is the source of truth.** All experiment configuration lives in YAML
-files. Code loads config; code does not contain config.
+```yaml
+repo_read:
+  repo: dev_utils          # key from repos block in experiment_base.yaml
+  manifest: .doc-gen/manifest.skel
+  max_chars: 40000
+```
 
-**Jinja2 for prompt templating.** Prompt `.md` files use `{{ variable }}` syntax.
-The `prompt_loader.py` module injects file contents, pylint reports, corpus text,
-and other context before sending to Ollama.
+The runner:
+1. Resolves the repo path from `repos.dev_utils`
+2. Calls `repo_reader.read_repo_context(skel_path, max_chars)`
+3. Adds result to base context as `{{ repo_context }}`
 
-**Base schema inheritance.** Every experiment config overrides only what differs
-from `data/experiment_base.yaml`. The loader merges them at runtime.
+If `manifest.skel` does not exist, the runner prints a clear error:
+```
+  ERROR: manifest.skel not found at /repos/dev-utils/.doc-gen/manifest.skel
+  Run skeleton_reader against this repo first:
+    designing-gemma-skel /repos/dev-utils
+```
 
-**Corpus sources are flexible.** The experiment runner accepts both `url` and
-`file` source types for corpus text. Both land in `{{ source_text }}` identically.
-Prompt templates never know the difference.
+---
 
-**Model digests are pinned after first run.** Fill in the `digest` field in each
-experiment config after the first run:
+## New CLI Entry Point
+
+`skeleton_reader.py` gets a CLI entry point registered in `pyproject.toml`:
+
+```toml
+designing-gemma-skel = "designing_gemma.skeleton_reader:main"
+```
+
+Usage:
 ```bash
-ollama show gemma4:e2b --verbose
-ollama show gemma4:e4b --verbose
+# Inside the container, against a mounted repo
+designing-gemma-skel /repos/dev-utils
+designing-gemma-skel /repos/sr-barbara
 ```
 
-**SQL is never auto-applied.** Experiment 06 output is staged SQL only. A human
-reviews each block, assigns difficulty, verifies IDs, and pastes into Adminer.
+This is a one-time setup step per repo, re-run whenever the codebase changes
+significantly.
 
 ---
 
-## Future: Designing Gemma Webapp (v2.0)
+## Files Created or Modified
 
-The structure of this repo is designed to be wrapped in a web UI. Key features
-planned for v2.0:
+| File | Change |
+|---|---|
+| `src/designing_gemma/skeleton_reader.py` | New |
+| `src/designing_gemma/repo_reader.py` | New |
+| `src/designing_gemma/experiment_runner.py` | Add repo_read support |
+| `pyproject.toml` | Add designing-gemma-skel entry point |
+| `data/experiment_base.yaml` | Document repo_read config block |
+| `tests/test_skeleton_reader.py` | New |
+| `tests/test_repo_reader.py` | New |
 
-- Dual-listbox experiment selector (available → run queue)
-- Numeric prefix auto-assigned by the system
-- Voice selection for capstone summary and readme
-- Community voice submissions via PR workflow
-- PostgreSQL read model synced from YAML run logs
-- CRUD interface for experiment configs
-- "Are you interested in playing?" interest form for community contributors
-- Ankh-Morpork corpus + Pratchett voice
+---
 
-See Obsidian notes for full v2.0 feature spec.
+## What This Enables
+
+Once implemented, experiments that currently hallucinate will have accurate
+context:
+
+- **01 readme_gen** — Gemma sees real package structure, real imports, real
+  function signatures. README output will reflect actual code.
+- **03 srb_animation** — Gemma sees actual sr-barbara JS/CSS structure before
+  suggesting modifications.
+- **06 srb_sentence_gen** — schema files and seed SQL can be included directly
+  as small non-Python files within budget.
+
+---
+
+## Future filekit / skeletonkit Notes
+
+When this logic moves to dev-utils as a standalone tool:
+
+- Remove the doc-gen manifest dependency — accept a repo path directly
+- Add language detection for non-Python skeleton strategies
+- Add configurable ignore patterns (currently inherits from manifest.yml selection)
+- Consider output formats beyond YAML — JSON for programmatic use, plain text
+  for human review
+- The `ast` extraction logic in `skeleton_reader.py` is the core reusable piece —
+  keep it as a pure function library separate from the CLI wrapper
+- A `--diff` mode that compares two `manifest.skel` files would be useful for
+  tracking codebase changes over time
 
 ```

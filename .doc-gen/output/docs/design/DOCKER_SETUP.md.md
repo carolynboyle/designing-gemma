@@ -2,7 +2,7 @@
 
 **Path:** docs/design/DOCKER_SETUP.md
 **Syntax:** markdown
-**Generated:** 2026-05-13 07:45:45
+**Generated:** 2026-05-13 22:16:06
 
 ```markdown
 # Designing Gemma — Local Test & Mac Deployment Guide

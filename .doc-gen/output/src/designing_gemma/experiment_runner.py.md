@@ -2,7 +2,7 @@
 
 **Path:** src/designing_gemma/experiment_runner.py
 **Syntax:** python
-**Generated:** 2026-05-13 07:45:45
+**Generated:** 2026-05-13 22:16:06
 
 ```python
 # =============================================================================
@@ -182,6 +182,31 @@ def _run_experiment(experiment_entry: dict) -> bool:
         else [None]
     )
 
+    # Build base context — available to all prompts in this experiment
+    repos = config.get("repos", {})
+    base_context = {"repos": repos} if repos else {}
+
+# Load repo context if experiment specifies repo_read
+    repo_read = config.get("repo_read")
+    if repo_read:
+        from designing_gemma.repo_reader import read_repo_context, RepoReaderError
+        from designing_gemma.skeleton_reader import build_skeleton, SkeletonError
+        repo_key       = repo_read.get("repo")
+        repo_root      = Path(repos.get(repo_key, ""))
+        max_chars      = repo_read.get("max_chars", 40_000)
+        size_overrides = repo_read.get("size_overrides") or None
+        try:
+            skeleton_data = build_skeleton(
+                repo_root,
+                size_overrides=size_overrides,
+            )
+            result = read_repo_context(skeleton_data, max_chars)
+            base_context["repo_context"] = result["context_text"]
+            if result["truncated"]:
+                print(f"  WARNING: repo context truncated — {result['files_excluded']} file(s) omitted")
+        except (SkeletonError, RepoReaderError) as e:
+            print(f"  ERROR loading repo context: {e}")
+
     for prompt_def in prompts:
         prompt_file  = prompt_def.get("file")
         prompt_label = prompt_def.get("label", prompt_file)
@@ -189,13 +214,14 @@ def _run_experiment(experiment_entry: dict) -> bool:
         for corpus in corpus_list:
             corpus_label = corpus["label"] if corpus else None
 
-            # Build Jinja2 context
-            context = {}
+             # Build Jinja2 context — start from base, add corpus if present
+            context = dict(base_context)
             if corpus:
                 try:
-                    corpus_text = load_corpus(
-                        corpus["source"], corpus["source_type"]
-                    )
+                    source = corpus["source"]
+                    if corpus["source_type"] == "file":
+                        source = str(experiment_dir / source)
+                    corpus_text = load_corpus(source, corpus["source_type"])
                     context["source_text"] = corpus_text
                 except PromptError as e:
                     print(f"  ERROR loading corpus {corpus_label}: {e}")
@@ -289,8 +315,8 @@ def main() -> None:
     print("\nChecking Ollama connection...")
     if not check_connection():
         print(
-            f"  ERROR: Cannot reach Ollama at http://localhost:11434\n"
-            f"  Make sure Ollama is running: ollama serve\n"
+            "  ERROR: Cannot reach Ollama at http://localhost:11434\n"
+            "  Make sure Ollama is running: ollama serve\n"
         )
         sys.exit(1)
     print("  Ollama is running.")

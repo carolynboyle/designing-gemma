@@ -1,9 +1,12 @@
-# Generated: 2026-05-13 07:45:38
+# Generated: 2026-05-13 22:15:59
 # Project: /home/carolyn/projects/designing-gemma
-# Files: 69
+# Files: 82
 
 version: 1
 documents:
+- path: .env.example
+- path: .env.linux.example
+- path: .env.mac.example
 - path: .gitignore
 - path: .pylintrc
 - path: .pytest_cache/.gitignore
@@ -15,12 +18,22 @@ documents:
 - path: README.md
 - path: data/experiment_base.yaml
 - path: data/experiments.yaml
+- path: data/voice_instructions/annihilator.txt
+- path: data/voice_instructions/hitchhiker.txt
+- path: data/voice_instructions/kafka.txt
+- path: data/voice_instructions/pratchett.txt
 - path: data/voices.yaml
 - path: docker-compose.yml
+- path: docs/change/designing-gemma-corpus-path-fix.md
+- path: docs/change/designing-gemma-env-fix.md
+- path: docs/change/designing-gemma-repo-context.md
+- path: docs/change/designing-gemma-size-overrides.md
+- path: docs/change/srb_animation_config.md
 - path: docs/design/06_srb_sentence_gen_design.md
 - path: docs/design/DOCKER_SETUP.md
 - path: docs/design/handoff-2026-05-10.md
 - path: docs/design/handoff-2026-05-12.md
+- path: docs/post/post-notes.md
 - path: docs/project-structure.md
 - path: experiments/01_readme_gen/config.yaml
 - path: experiments/01_readme_gen/prompts/guided.md
@@ -55,13 +68,14 @@ documents:
 - path: experiments/08_capstone_readme/prompts/kafka.md
 - path: experiments/08_capstone_readme/results/.gitkeep
 - path: experiments/_prompt_templates/gemini_prompt_for_creative_prompts.md
-- path: ollama_client.py
 - path: pyproject.toml
 - path: src/designing_gemma/__init__.py
 - path: src/designing_gemma/config.py
 - path: src/designing_gemma/experiment_runner.py
 - path: src/designing_gemma/ollama_client.py
 - path: src/designing_gemma/prompt_loader.py
+- path: src/designing_gemma/repo_reader.py
+- path: src/designing_gemma/skeleton_reader.py
 - path: src/designing_gemma.egg-info/PKG-INFO
 - path: src/designing_gemma.egg-info/SOURCES.txt
 - path: src/designing_gemma.egg-info/dependency_links.txt
@@ -72,4 +86,3 @@ documents:
 - path: tests/test_config.py
 - path: tests/test_ollama_client.py
 - path: tests/test_prompt_loader.py
-- path: ~dgtree.txt

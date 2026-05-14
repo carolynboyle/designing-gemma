@@ -2,7 +2,7 @@
 
 **Path:** data/experiment_base.yaml
 **Syntax:** yaml
-**Generated:** 2026-05-13 07:45:45
+**Generated:** 2026-05-13 22:16:06
 
 ```yaml
 # =============================================================================
@@ -20,6 +20,17 @@ experiment:
   experiment_version: 1          # increment when prompt or scope changes meaningfully
   target_repo: ~                 # required — path or URL of repo under test
   target_branch: ~               # optional — null means use current branch
+
+  # =============================================================================
+# repos
+# Container-side paths to target repositories, mounted via docker-compose.
+# These are injected into every prompt context as {{ repos.dev_utils }} etc.
+# Paths are stable inside the container regardless of host OS.
+# =============================================================================
+
+repos:
+  dev_utils: /repos/dev-utils
+  sr_barbara: /repos/sr-barbara
 
 model:
   models:                        # run experiment against each model in list
