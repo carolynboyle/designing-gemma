@@ -179,6 +179,21 @@ def _run_experiment(experiment_entry: dict) -> bool:
     repos = config.get("repos", {})
     base_context = {"repos": repos} if repos else {}
 
+    # Load repo context if experiment specifies repo_read
+    repo_read = config.get("repo_read")
+    if repo_read:
+        from designing_gemma.repo_reader import read_repo_context, RepoReaderError
+        repo_key   = repo_read.get("repo")
+        skel_path  = Path(repos.get(repo_key, "")) / repo_read.get("manifest", ".doc-gen/manifest.skel")
+        max_chars  = repo_read.get("max_chars", 40_000)
+        try:
+            result = read_repo_context(skel_path, max_chars)
+            base_context["repo_context"] = result["context_text"]
+            if result["truncated"]:
+                print(f"  WARNING: repo context truncated — {result['files_excluded']} file(s) omitted")
+        except RepoReaderError as e:
+            print(f"  ERROR loading repo context: {e}")
+
     for prompt_def in prompts:
         prompt_file  = prompt_def.get("file")
         prompt_label = prompt_def.get("label", prompt_file)
