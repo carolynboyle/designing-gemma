@@ -1,7 +1,8 @@
 # =============================================================================
 # designing_gemma/repo_reader.py
-# Reads a manifest.skel file and formats its contents as a prompt-injectable
-# text block for use as a Jinja2 template variable ({{ repo_context }}).
+# Reads a manifest.skel file or skeleton data dict and formats its contents
+# as a prompt-injectable text block for use as a Jinja2 template variable
+# ({{ repo_context }}).
 #
 # Gemma receives a compact structural outline of the target repo rather than
 # raw source files. Token budget is enforced — large repos are truncated
@@ -85,14 +86,15 @@ def _format_entry(entry: dict) -> str:
 # =============================================================================
 
 def read_repo_context(
-    skel_path: str | Path,
+    source: str | Path | dict,
     max_chars: int = DEFAULT_MAX_CHARS,
 ) -> dict:
     """
-    Read manifest.skel and format contents for prompt injection.
+    Format skeleton data for prompt injection.
 
     Args:
-        skel_path:  Path to manifest.skel file.
+        source:     Either a path to manifest.skel (str or Path) or a
+                    skeleton data dict as returned by build_skeleton().
         max_chars:  Maximum total characters in the output block.
                     Truncation happens at file boundaries — never mid-file.
 
@@ -105,22 +107,24 @@ def read_repo_context(
             truncated        — bool, True if budget was reached
 
     Raises:
-        RepoReaderError: If skel_path does not exist or cannot be parsed.
+        RepoReaderError: If source cannot be read or parsed.
     """
-    skel_path = Path(skel_path)
-
-    if not skel_path.exists():
-        raise RepoReaderError(
-            f"manifest.skel not found: {skel_path}\n"
-            f"Run skeleton_reader against this repo first:\n"
-            f"  designing-gemma-skel {skel_path.parent.parent}"
-        )
-
-    try:
-        with skel_path.open("r", encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-    except yaml.YAMLError as e:
-        raise RepoReaderError(f"Failed to parse manifest.skel: {e}") from e
+    # Accept either a skeleton data dict or a path to manifest.skel
+    if isinstance(source, dict):
+        data = source
+    else:
+        skel_path = Path(source)
+        if not skel_path.exists():
+            raise RepoReaderError(
+                f"manifest.skel not found: {skel_path}\n"
+                f"Run skeleton_reader against this repo first:\n"
+                f"  designing-gemma-skel {skel_path.parent.parent}"
+            )
+        try:
+            with skel_path.open("r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+        except yaml.YAMLError as e:
+            raise RepoReaderError(f"Failed to parse manifest.skel: {e}") from e
 
     if not isinstance(data, dict) or "files" not in data:
         raise RepoReaderError("manifest.skel is missing 'files' key.")
@@ -133,8 +137,8 @@ def read_repo_context(
     truncated      = False
 
     for entry in files:
-        block      = _format_entry(entry)
-        block_len  = len(block) + 2   # +2 for trailing newlines
+        block     = _format_entry(entry)
+        block_len = len(block) + 2   # +2 for trailing newlines
 
         if total_chars + block_len > max_chars:
             files_excluded += 1

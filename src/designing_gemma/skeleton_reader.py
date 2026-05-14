@@ -118,14 +118,18 @@ def build_skeleton(
     repo_path: Path,
     manifest_path: str = DEFAULT_MANIFEST_PATH,
     size_limit: int = DEFAULT_SIZE_LIMIT,
+    size_overrides: list[str] | None = None,
 ) -> dict:
     """
     Read manifest.yml, extract skeletons, return structured data.
 
     Args:
-        repo_path:     Root path of the target repo.
-        manifest_path: Path to manifest.yml relative to repo_path.
-        size_limit:    Max characters for non-Python file inclusion.
+        repo_path:      Root path of the target repo.
+        manifest_path:  Path to manifest.yml relative to repo_path.
+        size_limit:     Max characters for non-Python file inclusion.
+        size_overrides: List of file paths (relative to repo root) to
+                        include at full size regardless of size_limit.
+                        Useful for style reference files like README.md.
 
     Returns:
         Dict with keys:
@@ -161,6 +165,7 @@ def build_skeleton(
         "skipped_hardcoded":   0,
     }
 
+    overrides = set(size_overrides) if size_overrides else set()
     files = []
 
     for doc in documents:
@@ -211,7 +216,7 @@ def build_skeleton(
                 size_chars = len(content)
                 entry["size_chars"] = size_chars
 
-                if size_chars <= size_limit:
+                if size_chars <= size_limit or path_str in overrides:
                     entry["included"] = True
                     entry["content"]  = content
                     stats["non_python_included"] += 1
@@ -274,26 +279,53 @@ def write_skel(
 
 def main() -> None:
     """
-    CLI entry point: designing-gemma-skel <repo_path>
+    CLI entry point: designing-gemma-skel <repo_path> [--override <path>] ...
 
     Reads manifest.yml from the target repo and writes manifest.skel.
-    Run once per repo before experiments that require repo context.
-    """
-    if len(sys.argv) < 2:
-        print("Usage: designing-gemma-skel <repo_path>")
-        print("  repo_path: path to target repo (must contain .doc-gen/manifest.yml)")
-        sys.exit(1)
+    Diagnostic tool — the runner calls build_skeleton() directly at runtime.
 
-    repo_path = Path(sys.argv[1]).resolve()
+    Options:
+        --override <path>   Include file at full size regardless of size limit.
+                            May be specified multiple times.
+
+    Example:
+        designing-gemma-skel /repos/dev-utils --override python/fletcher/README.md
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="designing-gemma-skel",
+        description="Generate manifest.skel from doc-gen manifest.yml",
+    )
+    parser.add_argument(
+        "repo_path",
+        help="Path to target repo (must contain .doc-gen/manifest.yml)",
+    )
+    parser.add_argument(
+        "--override",
+        action="append",
+        dest="size_overrides",
+        metavar="PATH",
+        default=[],
+        help="Include file at full size regardless of size limit (repeatable)",
+    )
+
+    args = parser.parse_args()
+    repo_path = Path(args.repo_path).resolve()
 
     if not repo_path.exists():
         print(f"ERROR: repo path not found: {repo_path}")
         sys.exit(1)
 
     print(f"Building skeleton for: {repo_path}")
+    if args.size_overrides:
+        print(f"  Size overrides: {args.size_overrides}")
 
     try:
-        skeleton_data = build_skeleton(repo_path)
+        skeleton_data = build_skeleton(
+            repo_path,
+            size_overrides=args.size_overrides or None,
+        )
     except SkeletonError as e:
         print(f"ERROR: {e}")
         sys.exit(1)
