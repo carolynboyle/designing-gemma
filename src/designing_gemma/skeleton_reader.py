@@ -35,6 +35,7 @@ HARDCODED_SKIP_PATTERNS = [
 DEFAULT_MANIFEST_PATH = ".doc-gen/manifest.yml"
 DEFAULT_SKEL_PATH     = ".doc-gen/manifest.skel"
 DEFAULT_SIZE_LIMIT    = 5000   # characters — non-Python files above this are excluded
+CLASS_LIST_PATH       = "class_list.txt"   # debug output, repo root, gitignored
 
 
 class SkeletonError(Exception):
@@ -53,61 +54,164 @@ def _should_skip(path_str: str) -> bool:
     return False
 
 
-def _extract_python_skeleton(source: str) -> dict:
+# =============================================================================
+# SkeletonExtractor
+# =============================================================================
+
+class SkeletonExtractor:
     """
-    Parse Python source with ast and extract imports, classes, functions.
+    Extracts structural summaries from Python source using the ast module.
+
+    Three focused extraction passes — imports, classes+methods, top-level
+    functions — are coordinated by extract(), which returns a single dict
+    suitable for inclusion in the manifest.skel output.
+    """
+
+    def __init__(self, source: str):
+        """
+        Args:
+            source: Python source code as a string.
+
+        Raises:
+            SyntaxError: If the source cannot be parsed.
+        """
+        self.tree = ast.parse(source)
+
+    @staticmethod
+    def _build_signature(node) -> str:
+        """Build a readable signature string from a FunctionDef node."""
+        args = node.args
+        arg_names = [a.arg for a in args.args]
+        if args.vararg:
+            arg_names.append(f"*{args.vararg.arg}")
+        if args.kwarg:
+            arg_names.append(f"**{args.kwarg.arg}")
+        return f"{node.name}({', '.join(arg_names)})"
+
+    def extract_imports(self) -> list[str]:
+        """
+        Walk the full tree for import statements.
+
+        Returns:
+            Sorted, deduplicated list of import names/aliases.
+        """
+        imports = []
+        for node in ast.walk(self.tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.append(alias.asname or alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                module = node.module or ""
+                for alias in node.names:
+                    name = alias.asname or alias.name
+                    imports.append(f"{module}.{name}" if module else name)
+        return sorted(set(imports))
+
+    def extract_classes_and_methods(self) -> tuple[list[str], list[str]]:
+        """
+        Two-pass extraction of classes and their methods.
+
+        Pass 1: find ClassDef nodes directly in tree.body.
+        Pass 2: for each class, walk its body for FunctionDef nodes,
+                building ClassName.method(args) signatures.
+
+        Returns:
+            Tuple of (class_names, method_signatures) where method_signatures
+            entries are formatted as "ClassName.method_name(args)".
+        """
+        class_names = []
+        methods = []
+
+        for node in self.tree.body:
+            if isinstance(node, ast.ClassDef):
+                class_names.append(node.name)
+                for item in node.body:
+                    if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        sig = self._build_signature(item)
+                        methods.append(f"{node.name}.{sig}")
+
+        return class_names, methods
+
+    def extract_top_level_functions(self) -> list[str]:
+        """
+        Extract functions defined directly in tree.body (not inside a class).
+
+        Returns:
+            List of signature strings, e.g. ["build_skeleton(repo_path, manifest_path)"]
+        """
+        functions = []
+        for node in self.tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                functions.append(self._build_signature(node))
+        return functions
+
+    def extract(self) -> dict:
+        """
+        Run all three extraction passes and return combined result.
+
+        Returns:
+            Dict with keys:
+                imports   — sorted list of import names
+                classes   — list of class names
+                methods   — list of "ClassName.method(args)" strings
+                functions — list of top-level function signatures
+        """
+        imports = self.extract_imports()
+        class_names, methods = self.extract_classes_and_methods()
+        functions = self.extract_top_level_functions()
+
+        return {
+            "imports":   imports,
+            "classes":   class_names,
+            "methods":   methods,
+            "functions": functions,
+        }
+
+
+# =============================================================================
+# Class list debug helpers
+# =============================================================================
+
+def write_class_list(repo_path: Path, entries: list[dict]) -> None:
+    """
+    Write class_list.txt to repo root for debugging.
+
+    Each entry is a dict with keys: path, classes, methods.
+    File is overwritten on every call.
 
     Args:
-        source: Python source code as a string.
-
-    Returns:
-        Dict with keys: imports (list[str]), classes (list[str]),
-        functions (list[str]).
-
-    Raises:
-        SyntaxError: If the source cannot be parsed.
+        repo_path: Root path of the target repo.
+        entries:   List of per-file dicts collected during build_skeleton().
     """
-    tree = ast.parse(source)
+    out_path = repo_path / CLASS_LIST_PATH
+    with out_path.open("w", encoding="utf-8") as f:
+        f.write("# class_list.txt — generated by skeleton_reader\n")
+        f.write("# Debug output. Safe to delete. Overwritten on next run.\n\n")
+        for entry in entries:
+            if not entry.get("classes"):
+                continue
+            f.write(f"{entry['path']}\n")
+            for class_name in entry["classes"]:
+                f.write(f"  {class_name}\n")
+                for method_sig in entry.get("methods", []):
+                    if method_sig.startswith(f"{class_name}."):
+                        f.write(f"    - {method_sig}\n")
+            f.write("\n")
 
-    imports   = []
-    classes   = []
-    functions = []
 
-    for node in ast.walk(tree):
-        # Import statements: import os, import pathlib
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                imports.append(alias.asname or alias.name)
+def cleanup_class_list(repo_path: Path) -> None:
+    """
+    Delete class_list.txt from repo root if it exists.
 
-        # From imports: from pathlib import Path
-        elif isinstance(node, ast.ImportFrom):
-            module = node.module or ""
-            for alias in node.names:
-                name = alias.asname or alias.name
-                imports.append(f"{module}.{name}" if module else name)
+    Called at the start of build_skeleton() to remove the previous run's
+    debug output before the new run begins.
 
-        # Top-level class definitions only
-        elif isinstance(node, ast.ClassDef):
-            if isinstance(node, ast.ClassDef):
-                classes.append(node.name)
-
-        # Top-level and class-level function definitions
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            # Build signature string
-            args = node.args
-            arg_names = [a.arg for a in args.args]
-            if args.vararg:
-                arg_names.append(f"*{args.vararg.arg}")
-            if args.kwarg:
-                arg_names.append(f"**{args.kwarg.arg}")
-            sig = f"{node.name}({', '.join(arg_names)})"
-            functions.append(sig)
-
-    return {
-        "imports":   sorted(set(imports)),
-        "classes":   classes,
-        "functions": functions,
-    }
+    Args:
+        repo_path: Root path of the target repo.
+    """
+    out_path = repo_path / CLASS_LIST_PATH
+    if out_path.exists():
+        out_path.unlink()
 
 
 # =============================================================================
@@ -156,6 +260,9 @@ def build_skeleton(
 
     documents = manifest["documents"]
 
+    # Clean up previous run's debug output before starting
+    cleanup_class_list(repo_path)
+
     stats = {
         "total":               len(documents),
         "python_parsed":       0,
@@ -190,7 +297,7 @@ def build_skeleton(
 
             try:
                 source = file_path.read_text(encoding="utf-8")
-                skeleton = _extract_python_skeleton(source)
+                skeleton = SkeletonExtractor(source).extract()
                 entry.update(skeleton)
                 stats["python_parsed"] += 1
             except SyntaxError as e:
@@ -231,6 +338,9 @@ def build_skeleton(
                 stats["non_python_excluded"] += 1
 
             files.append(entry)
+
+    # Write debug class list for this run
+    write_class_list(repo_path, files)
 
     return {
         "files":     files,

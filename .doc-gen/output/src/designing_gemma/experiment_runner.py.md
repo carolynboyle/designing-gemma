@@ -2,7 +2,7 @@
 
 **Path:** src/designing_gemma/experiment_runner.py
 **Syntax:** python
-**Generated:** 2026-05-13 22:16:06
+**Generated:** 2026-05-14 07:38:25
 
 ```python
 # =============================================================================
@@ -191,20 +191,32 @@ def _run_experiment(experiment_entry: dict) -> bool:
     if repo_read:
         from designing_gemma.repo_reader import read_repo_context, RepoReaderError
         from designing_gemma.skeleton_reader import build_skeleton, SkeletonError
+        from designing_gemma.manifest_filter import filter_manifest, ManifestFilterError
         repo_key       = repo_read.get("repo")
         repo_root      = Path(repos.get(repo_key, ""))
         max_chars      = repo_read.get("max_chars", 40_000)
         size_overrides = repo_read.get("size_overrides") or None
+        manifest_path  = repo_read.get("manifest", ".doc-gen/manifest.yml")
         try:
+            # Run manifest filter if configured
+            manifest_filter_cfg = repo_read.get("manifest_filter")
+            if manifest_filter_cfg:
+                filter_manifest(
+                    repo_root,
+                    include_prefixes=manifest_filter_cfg.get("include", []),
+                    source_manifest=manifest_filter_cfg.get("source", ".doc-gen/manifest.yml"),
+                    output_manifest=manifest_path,
+                )
             skeleton_data = build_skeleton(
                 repo_root,
+                manifest_path=manifest_path,
                 size_overrides=size_overrides,
             )
             result = read_repo_context(skeleton_data, max_chars)
             base_context["repo_context"] = result["context_text"]
             if result["truncated"]:
                 print(f"  WARNING: repo context truncated — {result['files_excluded']} file(s) omitted")
-        except (SkeletonError, RepoReaderError) as e:
+        except (SkeletonError, RepoReaderError, ManifestFilterError) as e:
             print(f"  ERROR loading repo context: {e}")
 
     for prompt_def in prompts:

@@ -2,7 +2,7 @@
 
 **Path:** src/designing_gemma/skeleton_reader.py
 **Syntax:** python
-**Generated:** 2026-05-13 22:16:06
+**Generated:** 2026-05-14 07:38:25
 
 ```python
 # =============================================================================

@@ -2,7 +2,7 @@
 
 **Path:** docs/change/srb_animation_config.md
 **Syntax:** markdown
-**Generated:** 2026-05-13 22:16:06
+**Generated:** 2026-05-14 07:38:25
 
 ```markdown
 # Changeset: skeleton_reader.py and repo_reader.py

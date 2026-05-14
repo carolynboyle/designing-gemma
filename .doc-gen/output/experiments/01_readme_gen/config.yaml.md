@@ -2,7 +2,7 @@
 
 **Path:** experiments/01_readme_gen/config.yaml
 **Syntax:** yaml
-**Generated:** 2026-05-13 22:16:06
+**Generated:** 2026-05-14 07:38:25
 
 ```yaml
 # =============================================================================
@@ -47,8 +47,15 @@ prompts:
         Explicit package definitions, required README sections, and style
         standard provided. Tests instruction-following and output quality
         when given a complete spec.
+
 repo_read:
   repo: dev_utils
-  manifest: .doc-gen/manifest.skel
+  manifest: .doc-gen/manifest.python.yml
+  manifest_filter:
+    source: .doc-gen/manifest.yml
+    include:
+      - python/
   max_chars: 40000
+  size_overrides:
+    - python/fletcher/README.md
 ```

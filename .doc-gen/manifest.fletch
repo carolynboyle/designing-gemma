@@ -1,14 +1,14 @@
-# Generated: 2026-05-13 22:16:20
+# Generated: 2026-05-14 07:38:38
 # Repo: https://github.com/carolynboyle/designing-gemma
 # Branch: main
 # URL type: raw
 # Version: v0.1.0
-# Files: 82
+# Files: 84
 
 repo: https://github.com/carolynboyle/designing-gemma
 branch: main
 url_type: raw
-generated: '2026-05-13 22:16:20'
+generated: '2026-05-14 07:38:38'
 version: 0.1.0
 files:
 - path: .env.example
@@ -69,6 +69,8 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/design/handoff-2026-05-10.md
 - path: docs/design/handoff-2026-05-12.md
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/design/handoff-2026-05-12.md
+- path: docs/design/manifest-filter-design.md
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/design/manifest-filter-design.md
 - path: docs/post/post-notes.md
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/docs/post/post-notes.md
 - path: docs/project-structure.md
@@ -147,6 +149,8 @@ files:
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/src/designing_gemma/config.py
 - path: src/designing_gemma/experiment_runner.py
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/src/designing_gemma/experiment_runner.py
+- path: src/designing_gemma/manifest_filter.py
+  url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/src/designing_gemma/manifest_filter.py
 - path: src/designing_gemma/ollama_client.py
   url: https://raw.githubusercontent.com/carolynboyle/designing-gemma/main/src/designing_gemma/ollama_client.py
 - path: src/designing_gemma/prompt_loader.py

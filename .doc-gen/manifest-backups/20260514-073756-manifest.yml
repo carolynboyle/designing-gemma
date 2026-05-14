@@ -1,6 +1,6 @@
-# Generated: 2026-05-14 07:37:56
+# Generated: 2026-05-13 22:15:59
 # Project: /home/carolyn/projects/designing-gemma
-# Files: 84
+# Files: 82
 
 version: 1
 documents:
@@ -33,7 +33,6 @@ documents:
 - path: docs/design/DOCKER_SETUP.md
 - path: docs/design/handoff-2026-05-10.md
 - path: docs/design/handoff-2026-05-12.md
-- path: docs/design/manifest-filter-design.md
 - path: docs/post/post-notes.md
 - path: docs/project-structure.md
 - path: experiments/01_readme_gen/config.yaml
@@ -73,7 +72,6 @@ documents:
 - path: src/designing_gemma/__init__.py
 - path: src/designing_gemma/config.py
 - path: src/designing_gemma/experiment_runner.py
-- path: src/designing_gemma/manifest_filter.py
 - path: src/designing_gemma/ollama_client.py
 - path: src/designing_gemma/prompt_loader.py
 - path: src/designing_gemma/repo_reader.py

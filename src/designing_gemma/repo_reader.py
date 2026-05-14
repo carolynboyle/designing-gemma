@@ -41,6 +41,12 @@ def _format_python_entry(entry: dict) -> str:
     else:
         lines.append("classes: (none)")
 
+    methods = entry.get("methods", [])
+    if methods:
+        lines.append("methods:")
+        for method in methods:
+            lines.append(f"  {method}")
+
     functions = entry.get("functions", [])
     if functions:
         lines.append("functions:")
@@ -48,10 +54,6 @@ def _format_python_entry(entry: dict) -> str:
             lines.append(f"  {fn}")
     else:
         lines.append("functions: (none)")
-
-    error = entry.get("error")
-    if error:
-        lines.append(f"[parse error: {error}]")
 
     return "\n".join(lines)
 

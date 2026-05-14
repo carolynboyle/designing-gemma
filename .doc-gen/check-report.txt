@@ -5,11 +5,23 @@ CHECK MODE - Dry Run Report
 Manifest:     /home/carolyn/projects/designing-gemma/.doc-gen/manifest.yml
 Project Root: /home/carolyn/projects/designing-gemma
 Output Dir:   /home/carolyn/projects/designing-gemma/.doc-gen/output
-Total Files:  62
+Total Files:  84
 
 ======================================================================
 Files that would be generated:
 ======================================================================
+
+✓ EXISTS
+  Source: .env.example
+  Output: output/.env.example.md
+
+✓ EXISTS
+  Source: .env.linux.example
+  Output: output/.env.linux.example.md
+
+✓ EXISTS
+  Source: .env.mac.example
+  Output: output/.env.mac.example.md
 
 ✓ EXISTS
   Source: .gitignore
@@ -40,6 +52,10 @@ Files that would be generated:
   Output: output/.pytest_cache/v/cache/nodeids.md
 
 ✓ EXISTS
+  Source: Dockerfile
+  Output: output/Dockerfile.md
+
+✓ EXISTS
   Source: README.md
   Output: output/README.md.md
 
@@ -52,16 +68,72 @@ Files that would be generated:
   Output: output/data/experiments.yaml.md
 
 ✓ EXISTS
+  Source: data/voice_instructions/annihilator.txt
+  Output: output/data/voice_instructions/annihilator.txt.md
+
+✓ EXISTS
+  Source: data/voice_instructions/hitchhiker.txt
+  Output: output/data/voice_instructions/hitchhiker.txt.md
+
+✓ EXISTS
+  Source: data/voice_instructions/kafka.txt
+  Output: output/data/voice_instructions/kafka.txt.md
+
+✓ EXISTS
+  Source: data/voice_instructions/pratchett.txt
+  Output: output/data/voice_instructions/pratchett.txt.md
+
+✓ EXISTS
   Source: data/voices.yaml
   Output: output/data/voices.yaml.md
+
+✓ EXISTS
+  Source: docker-compose.yml
+  Output: output/docker-compose.yml.md
+
+✓ EXISTS
+  Source: docs/change/designing-gemma-corpus-path-fix.md
+  Output: output/docs/change/designing-gemma-corpus-path-fix.md.md
+
+✓ EXISTS
+  Source: docs/change/designing-gemma-env-fix.md
+  Output: output/docs/change/designing-gemma-env-fix.md.md
+
+✓ EXISTS
+  Source: docs/change/designing-gemma-repo-context.md
+  Output: output/docs/change/designing-gemma-repo-context.md.md
+
+✓ EXISTS
+  Source: docs/change/designing-gemma-size-overrides.md
+  Output: output/docs/change/designing-gemma-size-overrides.md.md
+
+✓ EXISTS
+  Source: docs/change/srb_animation_config.md
+  Output: output/docs/change/srb_animation_config.md.md
 
 ✓ EXISTS
   Source: docs/design/06_srb_sentence_gen_design.md
   Output: output/docs/design/06_srb_sentence_gen_design.md.md
 
 ✓ EXISTS
+  Source: docs/design/DOCKER_SETUP.md
+  Output: output/docs/design/DOCKER_SETUP.md.md
+
+✓ EXISTS
   Source: docs/design/handoff-2026-05-10.md
   Output: output/docs/design/handoff-2026-05-10.md.md
+
+✓ EXISTS
+  Source: docs/design/handoff-2026-05-12.md
+  Output: output/docs/design/handoff-2026-05-12.md.md
+
+✓ EXISTS
+  Source: docs/design/manifest-filter-design.md
+  Output: output/docs/design/manifest-filter-design.md.md
+
+✓ EXISTS
+  Source: docs/post/post-notes.md
+  Output: output/docs/post/post-notes.md.md
 
 ✓ EXISTS
   Source: docs/project-structure.md
@@ -196,6 +268,10 @@ Files that would be generated:
   Output: output/experiments/08_capstone_readme/results/.gitkeep.md
 
 ✓ EXISTS
+  Source: experiments/_prompt_templates/gemini_prompt_for_creative_prompts.md
+  Output: output/experiments/_prompt_templates/gemini_prompt_for_creative_prompts.md.md
+
+✓ EXISTS
   Source: pyproject.toml
   Output: output/pyproject.toml.md
 
@@ -212,12 +288,24 @@ Files that would be generated:
   Output: output/src/designing_gemma/experiment_runner.py.md
 
 ✓ EXISTS
+  Source: src/designing_gemma/manifest_filter.py
+  Output: output/src/designing_gemma/manifest_filter.py.md
+
+✓ EXISTS
   Source: src/designing_gemma/ollama_client.py
   Output: output/src/designing_gemma/ollama_client.py.md
 
 ✓ EXISTS
   Source: src/designing_gemma/prompt_loader.py
   Output: output/src/designing_gemma/prompt_loader.py.md
+
+✓ EXISTS
+  Source: src/designing_gemma/repo_reader.py
+  Output: output/src/designing_gemma/repo_reader.py.md
+
+✓ EXISTS
+  Source: src/designing_gemma/skeleton_reader.py
+  Output: output/src/designing_gemma/skeleton_reader.py.md
 
 ✓ EXISTS
   Source: src/designing_gemma.egg-info/PKG-INFO
@@ -262,8 +350,8 @@ Files that would be generated:
 ======================================================================
 Summary:
 ======================================================================
-Total files in manifest: 62
-Source files exist:      62
+Total files in manifest: 84
+Source files exist:      84
 Source files missing:    0
 
 No files were written (dry-run mode)

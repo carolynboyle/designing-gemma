@@ -2,7 +2,7 @@
 
 **Path:** experiments/04_pkg_restructure/config.yaml
 **Syntax:** yaml
-**Generated:** 2026-05-13 22:16:06
+**Generated:** 2026-05-14 07:38:25
 
 ```yaml
 # =============================================================================

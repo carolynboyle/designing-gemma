@@ -2,7 +2,7 @@
 
 **Path:** docs/design/06_srb_sentence_gen_design.md
 **Syntax:** markdown
-**Generated:** 2026-05-13 22:16:06
+**Generated:** 2026-05-14 07:38:25
 
 ```markdown
 # Design Doc: skeleton_reader.py and repo_reader.py

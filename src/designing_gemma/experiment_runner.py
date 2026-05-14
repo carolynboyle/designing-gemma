@@ -104,12 +104,49 @@ def _output_filename(
     return "_".join(parts) + ".txt"
 
 
+
 def _write_output(results_dir: Path, filename: str, text: str) -> Path:
     """Write generated output to results dir. Returns the output path."""
     results_dir.mkdir(parents=True, exist_ok=True)
     out_path = results_dir / filename
     out_path.write_text(text, encoding="utf-8")
     return out_path
+
+
+def _write_context_snapshot(
+    results_dir: Path,
+    context_text: str,
+    repo_key: str,
+    manifest_path: str,
+    truncated: bool,
+) -> None:
+    """
+    Write context_latest.txt to results_dir for debugging.
+
+    Records exactly what was injected as {{ repo_context }} for this run.
+    Overwritten on every run — always reflects the most recent build.
+
+    Args:
+        results_dir:   Experiment results directory.
+        context_text:  The formatted repo context string.
+        repo_key:      Repo identifier from config (e.g. "dev_utils").
+        manifest_path: Manifest path used for skeleton build.
+        truncated:     Whether the context was truncated at the char limit.
+    """
+    results_dir.mkdir(parents=True, exist_ok=True)
+    out_path = results_dir / "context_latest.txt"
+    timestamp = datetime.datetime.now().isoformat(timespec="seconds")
+    char_count = len(context_text)
+
+    with out_path.open("w", encoding="utf-8") as f:
+        f.write("# context_latest.txt — repo context snapshot\n")
+        f.write(f"# Generated : {timestamp}\n")
+        f.write(f"# Repo      : {repo_key}\n")
+        f.write(f"# Manifest  : {manifest_path}\n")
+        f.write(f"# Chars     : {char_count:,}\n")
+        f.write(f"# Truncated : {truncated}\n")
+        f.write("#\n")
+        f.write(context_text)
 
 
 # =============================================================================
@@ -179,7 +216,7 @@ def _run_experiment(experiment_entry: dict) -> bool:
     repos = config.get("repos", {})
     base_context = {"repos": repos} if repos else {}
 
-# Load repo context if experiment specifies repo_read
+    # Load repo context if experiment specifies repo_read
     repo_read = config.get("repo_read")
     if repo_read:
         from designing_gemma.repo_reader import read_repo_context, RepoReaderError
@@ -207,6 +244,13 @@ def _run_experiment(experiment_entry: dict) -> bool:
             )
             result = read_repo_context(skeleton_data, max_chars)
             base_context["repo_context"] = result["context_text"]
+            _write_context_snapshot(
+                results_dir,
+                result["context_text"],
+                repo_key,
+                manifest_path,
+                result["truncated"],
+            )
             if result["truncated"]:
                 print(f"  WARNING: repo context truncated — {result['files_excluded']} file(s) omitted")
         except (SkeletonError, RepoReaderError, ManifestFilterError) as e:

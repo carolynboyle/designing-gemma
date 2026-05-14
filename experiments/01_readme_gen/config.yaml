@@ -48,6 +48,6 @@ repo_read:
     source: .doc-gen/manifest.yml
     include:
       - python/
-  max_chars: 40000
+  max_chars: 80000
   size_overrides:
     - python/fletcher/README.md

@@ -2,7 +2,7 @@
 
 **Path:** experiments/01_readme_gen/prompts/guided.md
 **Syntax:** markdown
-**Generated:** 2026-05-13 22:16:06
+**Generated:** 2026-05-14 07:38:25
 
 ```markdown
 You are a technical writer reviewing a Python monorepo called dev-utils.
