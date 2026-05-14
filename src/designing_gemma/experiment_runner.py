@@ -15,6 +15,18 @@ from designing_gemma import __version__
 from designing_gemma.config import load_config, load_registry, enabled_experiments
 from designing_gemma.ollama_client import generate, check_connection, OllamaError
 from designing_gemma.prompt_loader import load_prompt, load_corpus, PromptError
+from designing_gemma.repo_reader import read_repo_context, RepoReaderError
+from designing_gemma.skeleton_reader import build_skeleton, SkeletonError
+from designing_gemma.manifest_filter import filter_manifest, ManifestFilterError
+
+
+# =============================================================================
+# Global flags
+# =============================================================================
+
+# Set to True when user chooses "run all" at the per-package confirmation prompt.
+# When True, per-package pauses are skipped and runs proceed automatically.
+RUN_ALL = False
 
 
 # =============================================================================
@@ -95,14 +107,16 @@ def _output_filename(
     model: str,
     prompt_label: str,
     corpus_label: str | None = None,
+    package_name: str | None = None,
 ) -> str:
     """Build a result filename from run metadata."""
     model_slug = model.replace(":", "-").replace("/", "-")
     parts = [run_id, model_slug, prompt_label]
+    if package_name:
+        parts.append(package_name)
     if corpus_label:
         parts.append(corpus_label)
     return "_".join(parts) + ".txt"
-
 
 
 def _write_output(results_dir: Path, filename: str, text: str) -> Path:
@@ -119,6 +133,7 @@ def _write_context_snapshot(
     repo_key: str,
     manifest_path: str,
     truncated: bool,
+    package_name: str | None = None,
 ) -> None:
     """
     Write context_latest.txt to results_dir for debugging.
@@ -132,6 +147,7 @@ def _write_context_snapshot(
         repo_key:      Repo identifier from config (e.g. "dev_utils").
         manifest_path: Manifest path used for skeleton build.
         truncated:     Whether the context was truncated at the char limit.
+        package_name:  Package name if running per-package, else None.
     """
     results_dir.mkdir(parents=True, exist_ok=True)
     out_path = results_dir / "context_latest.txt"
@@ -143,10 +159,74 @@ def _write_context_snapshot(
         f.write(f"# Generated : {timestamp}\n")
         f.write(f"# Repo      : {repo_key}\n")
         f.write(f"# Manifest  : {manifest_path}\n")
+        if package_name:
+            f.write(f"# Package   : {package_name}\n")
         f.write(f"# Chars     : {char_count:,}\n")
         f.write(f"# Truncated : {truncated}\n")
         f.write("#\n")
         f.write(context_text)
+
+
+# =============================================================================
+# Package discovery and filtering
+# =============================================================================
+
+def _discover_packages(skeleton_data: dict) -> list[str]:
+    """
+    Discover Python packages from skeleton data.
+
+    A package is any directory under python/ that contains a pyproject.toml.
+    Returns a sorted list of package names (the directory name only, not
+    the full path).
+
+    Args:
+        skeleton_data: Output of build_skeleton().
+
+    Returns:
+        Sorted list of package name strings, e.g. ["dbkit", "fletcher", ...]
+    """
+    packages = set()
+    for entry in skeleton_data.get("files", []):
+        path = entry.get("path", "")
+        # Match python/<name>/pyproject.toml — exactly two path components
+        # after python/ before the filename
+        parts = Path(path).parts
+        if (
+            len(parts) == 3
+            and parts[0] == "python"
+            and parts[2] == "pyproject.toml"
+        ):
+            packages.add(parts[1])
+    return sorted(packages)
+
+
+def _filter_skeleton_for_package(
+    skeleton_data: dict,
+    package_name: str,
+) -> dict:
+    """
+    Return a copy of skeleton_data containing only files for one package.
+
+    Filters to entries whose path starts with python/<package_name>/.
+    Preserves the stats and generated keys from the original.
+
+    Args:
+        skeleton_data: Output of build_skeleton().
+        package_name:  Package directory name, e.g. "fletcher".
+
+    Returns:
+        Filtered skeleton dict suitable for passing to read_repo_context().
+    """
+    prefix = f"python/{package_name}/"
+    filtered_files = [
+        entry for entry in skeleton_data.get("files", [])
+        if entry.get("path", "").startswith(prefix)
+    ]
+    return {
+        "files":     filtered_files,
+        "stats":     skeleton_data.get("stats", {}),
+        "generated": skeleton_data.get("generated", ""),
+    }
 
 
 # =============================================================================
@@ -164,6 +244,8 @@ def _run_experiment(experiment_entry: dict) -> bool:
         True if the experiment completed (even partially),
         False if the user skipped it.
     """
+    global RUN_ALL
+
     name   = experiment_entry.get("name", "unknown")
     number = experiment_entry.get("number", "??")
     risk   = experiment_entry.get("risk", "unknown")
@@ -218,15 +300,16 @@ def _run_experiment(experiment_entry: dict) -> bool:
 
     # Load repo context if experiment specifies repo_read
     repo_read = config.get("repo_read")
+    skeleton_data = None
+
     if repo_read:
-        from designing_gemma.repo_reader import read_repo_context, RepoReaderError
-        from designing_gemma.skeleton_reader import build_skeleton, SkeletonError
-        from designing_gemma.manifest_filter import filter_manifest, ManifestFilterError
+
         repo_key       = repo_read.get("repo")
         repo_root      = Path(repos.get(repo_key, ""))
         max_chars      = repo_read.get("max_chars", 40_000)
         size_overrides = repo_read.get("size_overrides") or None
         manifest_path  = repo_read.get("manifest", ".doc-gen/manifest.yml")
+
         try:
             # Run manifest filter if configured
             manifest_filter_cfg = repo_read.get("manifest_filter")
@@ -242,109 +325,171 @@ def _run_experiment(experiment_entry: dict) -> bool:
                 manifest_path=manifest_path,
                 size_overrides=size_overrides,
             )
-            result = read_repo_context(skeleton_data, max_chars)
-            base_context["repo_context"] = result["context_text"]
-            _write_context_snapshot(
-                results_dir,
-                result["context_text"],
-                repo_key,
-                manifest_path,
-                result["truncated"],
+        except (SkeletonError, ManifestFilterError) as e:
+            print(f"  ERROR building skeleton: {e}")
+            return False
+
+    # Determine iteration mode — per-package or single pass
+    packages = []
+    if skeleton_data and repo_read.get("per_package", False):
+        packages = _discover_packages(skeleton_data)
+        if packages:
+            print(f"\n  Packages found: {packages}")
+            pkg_choice = _pause(
+                "\nPress ENTER to confirm between packages, 'a' to run all, 'q' to quit: "
             )
-            if result["truncated"]:
-                print(f"  WARNING: repo context truncated — {result['files_excluded']} file(s) omitted")
-        except (SkeletonError, RepoReaderError, ManifestFilterError) as e:
-            print(f"  ERROR loading repo context: {e}")
+            if pkg_choice == "q":
+                print("Quitting.")
+                sys.exit(0)
+            if pkg_choice == "a":
+                RUN_ALL = True
+        else:
+            print("  WARNING: no packages found in skeleton data — running without per-package iteration.")
 
-    for prompt_def in prompts:
-        prompt_file  = prompt_def.get("file")
-        prompt_label = prompt_def.get("label", prompt_file)
+    # If no packages discovered (or per_package not set), run as single pass
+    if not packages:
+        packages = [None]
 
-        for corpus in corpus_list:
-            corpus_label = corpus["label"] if corpus else None
+    for package_name in packages:
+        if package_name:
+            _subheader(f"Package: {package_name}  ({packages.index(package_name) + 1}/{len(packages)})")
 
-             # Build Jinja2 context — start from base, add corpus if present
-            context = dict(base_context)
-            if corpus:
-                try:
-                    source = corpus["source"]
-                    if corpus["source_type"] == "file":
-                        source = str(experiment_dir / source)
-                    corpus_text = load_corpus(source, corpus["source_type"])
-                    context["source_text"] = corpus_text
-                except PromptError as e:
-                    print(f"  ERROR loading corpus {corpus_label}: {e}")
-                    continue
-
-            # Render prompt
+        # Build repo context for this package (or full repo if no package)
+        if skeleton_data:
             try:
-                rendered_prompt = load_prompt(prompt_file, prompt_dir, context)
-            except PromptError as e:
-                print(f"  ERROR rendering prompt {prompt_file}: {e}")
+                if package_name:
+                    pkg_skeleton = _filter_skeleton_for_package(skeleton_data, package_name)
+                else:
+                    pkg_skeleton = skeleton_data
+
+                result = read_repo_context(pkg_skeleton, max_chars)
+                base_context["repo_context"] = result["context_text"]
+                _write_context_snapshot(
+                    results_dir,
+                    result["context_text"],
+                    repo_key,
+                    manifest_path,
+                    result["truncated"],
+                    package_name=package_name,
+                )
+                if result["truncated"]:
+                    print(f"  WARNING: repo context truncated — {result['files_excluded']} file(s) omitted")
+            except RepoReaderError as e:
+                print(f"  ERROR loading repo context: {e}")
                 continue
 
-            for model_def in models:
-                model_name   = model_def.get("name")
-                model_digest = model_def.get("digest")
+        for prompt_def in prompts:
+            prompt_file  = prompt_def.get("file")
+            prompt_label = prompt_def.get("label", prompt_file)
 
-                run_id = _run_id(results_dir)
+            for corpus in corpus_list:
+                corpus_label = corpus["label"] if corpus else None
 
-                _subheader(
-                    f"{prompt_label}"
-                    + (f" / {corpus_label}" if corpus_label else "")
-                    + f" / {model_name}"
-                )
+                # Build Jinja2 context — start from base, add corpus if present
+                context = dict(base_context)
+                if package_name:
+                    context["package_name"] = package_name
+                if corpus:
+                    try:
+                        source = corpus["source"]
+                        if corpus["source_type"] == "file":
+                            source = str(experiment_dir / source)
+                        corpus_text = load_corpus(source, corpus["source_type"])
+                        context["source_text"] = corpus_text
+                    except PromptError as e:
+                        print(f"  ERROR loading corpus {corpus_label}: {e}")
+                        continue
 
+                # Render prompt
                 try:
-                    result = generate(
-                        model=model_name,
-                        prompt=rendered_prompt,
-                        temperature=temperature,
-                        max_tokens=max_tokens,
-                        digest=model_digest,
-                        stream_to_stdout=True,
+                    rendered_prompt = load_prompt(prompt_file, prompt_dir, context)
+                except PromptError as e:
+                    print(f"  ERROR rendering prompt {prompt_file}: {e}")
+                    continue
+
+                for model_def in models:
+                    model_name   = model_def.get("name")
+                    model_digest = model_def.get("digest")
+
+                    run_id = _run_id(results_dir)
+
+                    _subheader(
+                        f"{prompt_label}"
+                        + (f" / {package_name}" if package_name else "")
+                        + (f" / {corpus_label}" if corpus_label else "")
+                        + f" / {model_name}"
                     )
-                except OllamaError as e:
-                    print(f"\n  ERROR: {e}")
-                    result = {
-                        "text": "",
-                        "model": model_name,
-                        "model_digest": model_digest,
-                        "tokens_per_second": 0.0,
-                        "context_length": 0,
-                        "status": "failed",
+
+                    try:
+                        result = generate(
+                            model=model_name,
+                            prompt=rendered_prompt,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            digest=model_digest,
+                            stream_to_stdout=True,
+                        )
+                    except OllamaError as e:
+                        print(f"\n  ERROR: {e}")
+                        result = {
+                            "text": "",
+                            "model": model_name,
+                            "model_digest": model_digest,
+                            "tokens_per_second": 0.0,
+                            "context_length": 0,
+                            "status": "failed",
+                        }
+
+                    # Write output file
+                    out_filename = _output_filename(
+                        run_id, model_name, prompt_label,
+                        corpus_label=corpus_label,
+                        package_name=package_name,
+                    )
+                    out_path = _write_output(results_dir, out_filename, result["text"])
+
+                    # Append to run log
+                    log_entry = {
+                        "id":                 run_id,
+                        "timestamp":          datetime.datetime.now().isoformat(),
+                        "experiment":         name,
+                        "experiment_version": config.get("experiment", {}).get("experiment_version", 1),
+                        "model":              result["model"],
+                        "model_digest":       result["model_digest"],
+                        "prompt_file":        str(prompt_dir / prompt_file),
+                        "prompt_label":       prompt_label,
+                        "package":            package_name,
+                        "corpus_label":       corpus_label,
+                        "output_file":        str(out_path),
+                        "tokens_per_second":  result["tokens_per_second"],
+                        "context_length":     result["context_length"],
+                        "status":             result["status"],
+                        "documented":         [],
+                        "tags":               [],
+                        "notes":              None,
                     }
+                    _append_run_log(results_dir, log_entry)
 
-                # Write output file
-                out_filename = _output_filename(
-                    run_id, model_name, prompt_label, corpus_label
+                    print(f"\n  Written : {out_path}")
+                    print(f"  Speed   : {result['tokens_per_second']} tok/s")
+                    print(f"  Status  : {result['status']}")
+
+        # Per-package confirmation pause (skipped if RUN_ALL)
+        if package_name and not RUN_ALL:
+            remaining = len(packages) - packages.index(package_name) - 1
+            if remaining > 0:
+                pkg_choice = _pause(
+                    f"\n  {remaining} package(s) remaining. "
+                    "Press ENTER to continue, 'a' for all, 's' to skip rest, 'q' to quit: "
                 )
-                out_path = _write_output(results_dir, out_filename, result["text"])
-
-                # Append to run log
-                log_entry = {
-                    "id":                 run_id,
-                    "timestamp":          datetime.datetime.now().isoformat(),
-                    "experiment":         name,
-                    "experiment_version": config.get("experiment", {}).get("experiment_version", 1),
-                    "model":              result["model"],
-                    "model_digest":       result["model_digest"],
-                    "prompt_file":        str(prompt_dir / prompt_file),
-                    "prompt_label":       prompt_label,
-                    "corpus_label":       corpus_label,
-                    "output_file":        str(out_path),
-                    "tokens_per_second":  result["tokens_per_second"],
-                    "context_length":     result["context_length"],
-                    "status":             result["status"],
-                    "documented":         [],
-                    "tags":               [],
-                    "notes":              None,
-                }
-                _append_run_log(results_dir, log_entry)
-
-                print(f"\n  Written : {out_path}")
-                print(f"  Speed   : {result['tokens_per_second']} tok/s")
-                print(f"  Status  : {result['status']}")
+                if pkg_choice == "q":
+                    print("Quitting.")
+                    sys.exit(0)
+                if pkg_choice == "s":
+                    print("  Skipping remaining packages.")
+                    break
+                if pkg_choice == "a":
+                    RUN_ALL = True
 
     return True
 

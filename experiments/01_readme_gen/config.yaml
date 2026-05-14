@@ -42,6 +42,7 @@ prompts:
         when given a complete spec.
 
 repo_read:
+  per_package: true
   repo: dev_utils
   manifest: .doc-gen/manifest.python.yml
   manifest_filter:
@@ -51,3 +52,5 @@ repo_read:
   max_chars: 80000
   size_overrides:
     - python/fletcher/README.md
+
+    
