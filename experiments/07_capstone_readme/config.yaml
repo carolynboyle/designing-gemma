@@ -1,5 +1,5 @@
 # =============================================================================
-# experiments/08_capstone_readme/config.yaml
+# experiments/07_capstone_readme/config.yaml
 # Voiced capstone README — overrides experiment_base.yaml
 #
 # Human-initiated. Runs last, after 07_capstone_summary completes.
@@ -15,7 +15,7 @@ experiment:
   description: >
     Ask Gemma to write the designing-gemma README in three distinct voices —
     hitchhiker, kafka, and annihilator — using the factual capstone summary
-    from 07 as grounding. All three voices run against both models, producing
+    from 06 as grounding. All three voices run against both models, producing
     six README candidates. Human selects one. Gemma signs it. Tests creative
     voice consistency, factual accuracy under persona, and the ability to
     write something a human would actually want to read.
@@ -64,7 +64,7 @@ prompts:
 # =============================================================================
 
 context:
-  capstone_summary: "{{ capstone_summary }}"   # injected from 07 results at runtime
+  capstone_summary: "{{ capstone_summary }}"   # injected from 06 results at runtime
 
 results:
   results_dir: results/

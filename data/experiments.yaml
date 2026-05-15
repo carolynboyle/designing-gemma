@@ -66,26 +66,11 @@ experiments:
       after each package — human must verify before proceeding.
 
   - number: "05"
-    name: capstone_summary
-    risk: none
-    depends_on: []
-    enabled: false
-    config: experiments/05_capstone_summary/config.yaml
-    notes: >
-      Disabled for this run — running all experiments straight through to 07.
-      This experiment exists for multi-day or partial runs where a mid-run
-      checkpoint summary is useful. Enable it, run it after any subset of
-      experiments, and it will produce a factual neutral-voice summary of
-      whatever has completed so far. No voice, no interpretation — just
-      what ran and what it produced. Re-enable for future runs where you
-      want a progress snapshot before continuing.
-
-  - number: "06"
     name: srb_sentence_gen
     risk: none
     depends_on: []
     enabled: true
-    config: experiments/06_srb_sentence_gen/config.yaml
+    config: experiments/05_srb_sentence_gen/config.yaml
     notes: >
       Generative only — output is staged SQL reviewed and selectively applied
       by a human via Adminer. Nothing touches the database automatically.
@@ -93,23 +78,23 @@ experiments:
       corpus is defined but pending — Pratchett voice not yet written.
       Human must query Adminer for ID offsets before each run.
 
-  - number: "07"
+  - number: "06"
     name: capstone_summary
     risk: none
     depends_on: ["01", "02", "03", "04", "06"]
     enabled: true
-    config: experiments/07_capstone_summary/config.yaml
+    config: experiments/06_capstone_summary/config.yaml
     notes: >
       Auto-triggered after all generative experiments complete. Neutral voice.
       Factual summary of the full run — what ran, what each model produced,
       what was staged, what was applied. No interpretation. Feeds into 08.
 
-  - number: "08"
+  - number: "07"
     name: capstone_readme
     risk: none
     depends_on: ["01", "02", "03", "04", "06", "07"]
     enabled: true
-    config: experiments/08_capstone_readme/config.yaml
+    config: experiments/07_capstone_readme/config.yaml
     notes: >
       Human-initiated. Runs last. Gemma writes the README in one of three
       voices (hitchhiker, kafka, annihilator) and signs it. This is the

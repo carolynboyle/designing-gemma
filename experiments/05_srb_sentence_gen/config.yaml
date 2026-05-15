@@ -1,5 +1,5 @@
 # =============================================================================
-# experiments/06_srb_sentence_gen/config.yaml
+# experiments/05_srb_sentence_gen/config.yaml
 # Sr. Barbara sentence generation experiment — overrides experiment_base.yaml
 #
 # Target: sr-barbara repo (Postgres database via Adminer)
@@ -13,7 +13,7 @@
 #   unguided — schema inferred from worked examples only
 #   guided   — full schema spec and constraints provided explicitly
 #
-# Three corpora, one per capstone voice. Each yields one staged SQL file
+# Four corpora, public domain prose. Each yields one staged SQL file
 # per model per prompt variant.
 # =============================================================================
 
@@ -66,46 +66,40 @@ prompts:
 # =============================================================================
 
 corpora:
-  - label: hitchhiker
-    voice: hitchhiker
+  - label: wodehouse
     source_type: file
-    source: corpora/hhg_excerpt.txt     # library/preview excerpt — see note below
+    source: corpora/wodehouse
     status: active
     note: >
-      Douglas Adams, The Hitchhiker's Guide to the Galaxy. Not public domain.
-      Excerpt copied from library copy or Amazon preview for personal/educational
-      use. Not redistributed. Long, elaborately modified sentences; rich
-      prepositional structure. Skews medium/hard difficulty.
+      P.G. Wodehouse, Love Among the Chickens. Public domain.
+      Chapter 3. Absurdist comic prose, varied sentence structures,
+      good mix of dialogue and narration. Skews medium difficulty.
 
-  - label: metamorphosis
-    voice: kafka
-    source_type: url
-    source: https://www.gutenberg.org/files/5200/5200-0.txt
+  - label: austen
+    source_type: file
+    source: corpora/austen
     status: active
     note: >
-      Franz Kafka, The Metamorphosis (English translation). Public domain via
-      Project Gutenberg. Dense, formally structured sentences; good subordinate
-      clause examples for future schema extension. Lands across difficulty range.
+      Jane Austen, Pride and Prejudice. Public domain.
+      Chapter 1. Formal prose, complex subordinate clauses,
+      excellent variety of sentence structures. Skews medium/hard.
 
-  - label: terminator
-    voice: annihilator
+  - label: doyle
     source_type: file
-    source: corpora/terminator_excerpt.txt   # short excerpt for personal use
+    source: corpora/doyle
     status: active
     note: >
-      The Terminator (1984) screenplay. Not public domain. Short excerpt for
-      personal/educational use. Terse, imperative sentences; minimal modifiers.
-      Skews easy/medium difficulty. Strong contrast with Adams and Kafka corpora.
+      Arthur Conan Doyle, The Red-Headed League. Public domain.
+      The deduction scene. Mix of dialogue, narration, and Holmes's
+      reasoning. Good variety of sentence types. Skews medium.
 
-  - label: ankh_morpork
-    voice: pratchett
+  - label: kafka
     source_type: file
-    source: corpora/ankh_morpork_excerpt.txt
-    status: pending                     # future — voice not yet defined
+    source: corpora/kafka
+    status: active
     note: >
-      Terry Pratchett, Discworld series. Future experiment. Pratchett voice
-      to be added to voices.yaml when this corpus is activated. Grammatically
-      impeccable, philosophically unsettling. The Patrician approves.
+      Franz Kafka, The Metamorphosis. Public domain via Project Gutenberg.
+      Dense, formally structured sentences. Skews medium/hard.
 
 # =============================================================================
 # sql_conventions
