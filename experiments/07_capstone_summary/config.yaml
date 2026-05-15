@@ -23,6 +23,9 @@ experiment:
 model:
   temperature: 0.1               # minimum variation — factual reporting only
 
+inject_run_log: 
+  true
+
 prompts:
   prompt_dir: prompts/
   prompts:
@@ -38,3 +41,4 @@ prompts:
 results:
   results_dir: results/
   output: per_run
+

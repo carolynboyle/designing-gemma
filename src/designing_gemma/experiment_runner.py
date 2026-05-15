@@ -5,6 +5,8 @@
 # Entry point: designing-gemma (see pyproject.toml)
 # =============================================================================
 
+import io
+import re
 import sys
 import datetime
 from pathlib import Path
@@ -27,6 +29,63 @@ from designing_gemma.manifest_filter import filter_manifest, ManifestFilterError
 # Set to True when user chooses "run all" at the per-package confirmation prompt.
 # When True, per-package pauses are skipped and runs proceed automatically.
 RUN_ALL = False
+
+# Session log path — project root, overwritten every run.
+# Rename to keep: e.g. session_log_2026-05-14.txt
+SESSION_LOG_PATH = "session_log.txt"
+
+
+# =============================================================================
+# Session logger
+# =============================================================================
+
+# ANSI escape code pattern — stripped before writing to log file.
+_ANSI_ESCAPE = re.compile(r"\033\[[0-9;]*m")
+
+
+class SessionLogger(io.TextIOBase):
+    """
+    Tee wrapper for stdout — writes to both terminal and session_log.txt.
+
+    Installed at the start of main() via sys.stdout replacement.
+    Strips ANSI color codes before writing to the log file so the file
+    is clean text rather than escape sequences.
+
+    The log file is opened once at construction and closed on restore().
+    Overwrites any existing session_log.txt from a previous run — rename
+    the file before running if you want to keep the previous session.
+    """
+
+    def __init__(self, log_path: Path, terminal: io.TextIOBase):
+        self._terminal = terminal
+        self._log_path = log_path
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        self._log_file = log_path.open("w", encoding="utf-8")
+        timestamp = datetime.datetime.now().isoformat(timespec="seconds")
+        self._log_file.write("# session_log.txt — designing-gemma\n")
+        self._log_file.write(f"# Started : {timestamp}\n")
+        self._log_file.write("# Rename this file to keep it — overwritten on next run.\n\n")
+        self._log_file.flush()
+
+    def write(self, text: str) -> int:
+        self._terminal.write(text)
+        self._terminal.flush()
+        clean = _ANSI_ESCAPE.sub("", text)
+        self._log_file.write(clean)
+        self._log_file.flush()
+        return len(text)
+
+    def flush(self) -> None:
+        self._terminal.flush()
+        self._log_file.flush()
+
+    def restore(self) -> None:
+        """Restore original stdout and close the log file."""
+        sys.stdout = self._terminal
+        timestamp = datetime.datetime.now().isoformat(timespec="seconds")
+        self._log_file.write(f"\n# Ended : {timestamp}\n")
+        self._log_file.flush()
+        self._log_file.close()
 
 
 # =============================================================================
@@ -96,6 +155,27 @@ def _append_run_log(results_dir: Path, entry: dict) -> None:
     log.append(entry)
     with log_path.open("w", encoding="utf-8") as f:
         yaml.dump(log, f, allow_unicode=True, sort_keys=False)
+
+
+def _load_run_log(results_dir: Path) -> str:
+    """
+    Load run_log.yaml and return as a YAML-formatted string.
+
+    Used to inject {{ run_log }} into capstone summary prompts.
+    Returns an empty string if no run log exists yet.
+
+    Args:
+        results_dir: Experiment results directory.
+
+    Returns:
+        YAML string of run log contents, or empty string if not found.
+    """
+    log_path = results_dir / "run_log.yaml"
+    if not log_path.exists():
+        return ""
+    with log_path.open("r", encoding="utf-8") as f:
+        log = yaml.safe_load(f) or []
+    return yaml.dump(log, allow_unicode=True, sort_keys=False)
 
 
 # =============================================================================
@@ -188,8 +268,6 @@ def _discover_packages(skeleton_data: dict) -> list[str]:
     packages = set()
     for entry in skeleton_data.get("files", []):
         path = entry.get("path", "")
-        # Match python/<name>/pyproject.toml — exactly two path components
-        # after python/ before the filename
         parts = Path(path).parts
         if (
             len(parts) == 3
@@ -246,9 +324,9 @@ def _run_experiment(experiment_entry: dict) -> bool:
     """
     global RUN_ALL
 
-    name   = experiment_entry.get("name", "unknown")
-    number = experiment_entry.get("number", "??")
-    risk   = experiment_entry.get("risk", "unknown")
+    name        = experiment_entry.get("name", "unknown")
+    number      = experiment_entry.get("number", "??")
+    risk        = experiment_entry.get("risk", "unknown")
     config_path = experiment_entry.get("config", "")
 
     _header(f"Experiment {number}: {name}  [risk: {_risk_label(risk)}]")
@@ -298,12 +376,20 @@ def _run_experiment(experiment_entry: dict) -> bool:
     repos = config.get("repos", {})
     base_context = {"repos": repos} if repos else {}
 
+    # Inject run_log if experiment requests it
+    if config.get("inject_run_log", False):
+        run_log_text = _load_run_log(results_dir)
+        if run_log_text:
+            base_context["run_log"] = run_log_text
+            print(f"  Run log injected ({len(run_log_text):,} chars)")
+        else:
+            print("  WARNING: inject_run_log requested but no run_log.yaml found")
+
     # Load repo context if experiment specifies repo_read
-    repo_read = config.get("repo_read")
+    repo_read     = config.get("repo_read")
     skeleton_data = None
 
     if repo_read:
-
         repo_key       = repo_read.get("repo")
         repo_root      = Path(repos.get(repo_key, ""))
         max_chars      = repo_read.get("max_chars", 40_000)
@@ -311,7 +397,6 @@ def _run_experiment(experiment_entry: dict) -> bool:
         manifest_path  = repo_read.get("manifest", ".doc-gen/manifest.yml")
 
         try:
-            # Run manifest filter if configured
             manifest_filter_cfg = repo_read.get("manifest_filter")
             if manifest_filter_cfg:
                 filter_manifest(
@@ -501,54 +586,65 @@ def _run_experiment(experiment_entry: dict) -> bool:
 def main() -> None:
     """Entry point for the designing-gemma CLI."""
 
-    _header(f"Designing Gemma  v{__version__}")
-    print("  A structured experiment framework for local LLM evaluation.")
-    print("  Don't Panic.")
+    # Install session logger — tees stdout to session_log.txt
+    log_path = Path(SESSION_LOG_PATH)
+    logger = SessionLogger(log_path, sys.stdout)
+    sys.stdout = logger
 
-    # Check Ollama connection before doing anything else
-    print("\nChecking Ollama connection...")
-    if not check_connection():
-        print(
-            "  ERROR: Cannot reach Ollama at http://localhost:11434\n"
-            "  Make sure Ollama is running: ollama serve\n"
-        )
-        sys.exit(1)
-    print("  Ollama is running.")
-
-    # Load registry
     try:
-        registry = load_registry()
-    except FileNotFoundError as e:
-        print(f"\n  ERROR: {e}")
-        sys.exit(1)
+        _header(f"Designing Gemma  v{__version__}")
+        print("  A structured experiment framework for local LLM evaluation.")
+        print("  Don't Panic.")
+        print(f"\n  Session log: {log_path.resolve()}")
 
-    experiments = enabled_experiments(registry)
+        # Check Ollama connection before doing anything else
+        print("\nChecking Ollama connection...")
+        if not check_connection():
+            print(
+                "  ERROR: Cannot reach Ollama at http://localhost:11434\n"
+                "  Make sure Ollama is running: ollama serve\n"
+            )
+            sys.exit(1)
+        print("  Ollama is running.")
 
-    if not experiments:
-        print("\n  No enabled experiments found in data/experiments.yaml.")
-        sys.exit(0)
+        # Load registry
+        try:
+            registry = load_registry()
+        except FileNotFoundError as e:
+            print(f"\n  ERROR: {e}")
+            sys.exit(1)
 
-    print(f"\n  {len(experiments)} experiment(s) enabled:\n")
-    for exp in experiments:
-        risk_str = _risk_label(exp.get("risk", "unknown"))
-        print(f"    {exp['number']}  {exp['name']:<25} risk: {risk_str}")
+        experiments = enabled_experiments(registry)
 
-    _pause("\nPress ENTER to begin, 'q' to quit: ")
+        if not experiments:
+            print("\n  No enabled experiments found in data/experiments.yaml.")
+            sys.exit(0)
 
-    completed = []
-    skipped   = []
+        print(f"\n  {len(experiments)} experiment(s) enabled:\n")
+        for exp in experiments:
+            risk_str = _risk_label(exp.get("risk", "unknown"))
+            print(f"    {exp['number']}  {exp['name']:<25} risk: {risk_str}")
 
-    for exp in experiments:
-        ran = _run_experiment(exp)
-        if ran:
-            completed.append(exp["name"])
-        else:
-            skipped.append(exp["name"])
+        _pause("\nPress ENTER to begin, 'q' to quit: ")
 
-    _header("Run complete")
-    print(f"  Completed : {completed or 'none'}")
-    print(f"  Skipped   : {skipped or 'none'}")
-    print()
+        completed = []
+        skipped   = []
+
+        for exp in experiments:
+            ran = _run_experiment(exp)
+            if ran:
+                completed.append(exp["name"])
+            else:
+                skipped.append(exp["name"])
+
+        _header("Run complete")
+        print(f"  Completed : {completed or 'none'}")
+        print(f"  Skipped   : {skipped or 'none'}")
+        print(f"  Log saved : {log_path.resolve()}")
+        print()
+
+    finally:
+        logger.restore()
 
 
 if __name__ == "__main__":
