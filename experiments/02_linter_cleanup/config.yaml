@@ -40,6 +40,11 @@ prompts:
         {{ file_contents }} — full source
         {{ pylint_report }} — pylint JSON for this file only
 
+repo_read:
+  repo: dev_utils
+  per_file: true
+  max_chars: 40000
+
 results:
   results_dir: results/
   output: per_run
