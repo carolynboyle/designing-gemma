@@ -23,3 +23,9 @@ experiments/*/results/*
 # OS
 .DS_Store
 Thumbs.db
+
+# run logs etc
+session_log.txt
+class_list.txt
+results/run_log_master.yaml
+experiments/01_readme_gen/results.txt
