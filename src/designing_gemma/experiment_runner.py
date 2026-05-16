@@ -413,8 +413,6 @@ def _run_experiment(experiment_entry: dict) -> bool:
     max_tokens     = config.get("model", {}).get("max_tokens", 2048)
     repeat_penalty = config.get("model", {}).get("repeat_penalty", 1.0)
     repeat_last_n  = config.get("model", {}).get("repeat_last_n", 64)
-    repeat_penalty = config.get("model", {}).get("repeat_penalty", 1.0)
-    repeat_last_n  = config.get("model", {}).get("repeat_last_n", 64)
     corpora        = config.get("corpora", None)
 
     description = config.get("experiment", {}).get("description", "")
