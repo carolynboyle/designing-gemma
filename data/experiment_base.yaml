@@ -26,14 +26,17 @@ repos:
   sr_barbara: /repos/sr-barbara
 
 model:
-  models:                        # run experiment against each model in list
+  models:
     - name: gemma4:e2b
-      digest: ~                  # pin after first run: ollama show gemma4:e2b --verbose
+      digest: ~
     - name: gemma4:e4b
-      digest: ~                  # pin after first run: ollama show gemma4:e4b --verbose
-  temperature: 0.2               # low = deterministic; raise for capstone/voice tasks
+      digest: ~
+  temperature: 0.2
   max_tokens: 2048
-
+  repeat_penalty: 1.0            # 1.0 = disabled (Ollama default)
+                                 # raise to 1.2–1.5 to break repetition loops
+  repeat_last_n: 64              # token window the penalty looks back on
+  
 prompts:
   prompt_dir: prompts/
   prompts: []                    # list of prompt files — override in experiment config

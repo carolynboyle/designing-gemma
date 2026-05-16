@@ -411,6 +411,10 @@ def _run_experiment(experiment_entry: dict) -> bool:
     models         = config.get("model", {}).get("models", [])
     temperature    = config.get("model", {}).get("temperature", 0.2)
     max_tokens     = config.get("model", {}).get("max_tokens", 2048)
+    repeat_penalty = config.get("model", {}).get("repeat_penalty", 1.0)
+    repeat_last_n  = config.get("model", {}).get("repeat_last_n", 64)
+    repeat_penalty = config.get("model", {}).get("repeat_penalty", 1.0)
+    repeat_last_n  = config.get("model", {}).get("repeat_last_n", 64)
     corpora        = config.get("corpora", None)
 
     description = config.get("experiment", {}).get("description", "")
@@ -573,6 +577,7 @@ def _run_experiment(experiment_entry: dict) -> bool:
 
                     _subheader(f"{prompt_label} / {file_stem} / {model_name}")
 
+
                     try:
                         result = generate(
                             model=model_name,
@@ -581,6 +586,8 @@ def _run_experiment(experiment_entry: dict) -> bool:
                             max_tokens=max_tokens,
                             digest=model_digest,
                             stream_to_stdout=True,
+                            repeat_penalty=repeat_penalty,
+                            repeat_last_n=repeat_last_n,
                         )
                     except OllamaError as e:
                         print(f"\n  ERROR: {e}")
@@ -624,7 +631,11 @@ def _run_experiment(experiment_entry: dict) -> bool:
 
                     print(f"\n  Written : {out_path}")
                     print(f"  Speed   : {result['tokens_per_second']} tok/s")
-                    print(f"  Status  : {result['status']}")
+                    if result["status"] == "bailed":
+                        print(f"  Status  : {result['status']} "
+                              f"⚠️  model emitted 0 tokens — silent bail")
+                    else:
+                        print(f"  Status  : {result['status']}")
 
             # Per-file confirmation pause (skipped if RUN_ALL)
             if not RUN_ALL:
@@ -730,7 +741,10 @@ def _run_experiment(experiment_entry: dict) -> bool:
                             max_tokens=max_tokens,
                             digest=model_digest,
                             stream_to_stdout=True,
+                            repeat_penalty=repeat_penalty,
+                            repeat_last_n=repeat_last_n,
                         )
+
                     except OllamaError as e:
                         print(f"\n  ERROR: {e}")
                         result = {

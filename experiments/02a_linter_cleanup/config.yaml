@@ -27,6 +27,10 @@ experiment:
 
 model:
   temperature: 0.1               # minimum variation — mechanical fixes only
+  max_tokens: 800                # tight ceiling — catches loops early;
+                                 # a complete fix for a typical file fits here
+  repeat_penalty: 1.3            # break e2b loop failure mode
+  repeat_last_n: 64              # look back 64 tokens when applying penalty
 
 prompts:
   prompt_dir: prompts/

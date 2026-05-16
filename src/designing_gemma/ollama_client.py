@@ -3,6 +3,12 @@
 # Ollama API client. All model calls go through here.
 # Streams responses to stdout and captures metrics for the run log.
 # =============================================================================
+"""
+Ollama API client for the designing-gemma experiment framework.
+
+All model calls go through here. Handles streaming, metrics capture,
+repeat penalty options, and bail detection via eval_count.
+"""
 
 import json
 import os
@@ -52,13 +58,15 @@ def _stream_response(response: requests.Response) -> Iterator[str]:
                 continue
 
 
-def generate(
+def generate(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     model: str,
     prompt: str,
     temperature: float = 0.2,
     max_tokens: int = 2048,
     digest: str | None = None,
     stream_to_stdout: bool = True,
+    repeat_penalty: float = 1.0,
+    repeat_last_n: int = 64,
 ) -> dict:
     """
     Send a prompt to Ollama and return the result with metrics.
@@ -70,6 +78,8 @@ def generate(
         max_tokens:        Maximum tokens to generate
         digest:            Optional pinned model digest for run log
         stream_to_stdout:  If True, print tokens to stdout as they arrive
+        repeat_penalty:    Repetition penalty (1.0 = disabled, 1.3 = moderate)
+        repeat_last_n:     Token window for repetition penalty (0 = disabled)
 
     Returns:
         Dict with keys:
@@ -78,7 +88,8 @@ def generate(
             model_digest      — digest if provided, else None
             tokens_per_second — inference rate (float)
             context_length    — total tokens in context (int)
-            status            — 'complete' or 'failed'
+            eval_count        — tokens generated (0 = model bailed immediately)
+            status            — 'complete', 'bailed', or 'failed'
 
     Raises:
         OllamaError: If the API is unreachable or returns an error.
@@ -90,6 +101,8 @@ def generate(
         "options": {
             "temperature": temperature,
             "num_predict": max_tokens,
+            "repeat_penalty": repeat_penalty,
+            "repeat_last_n": repeat_last_n,
         },
     }
 
@@ -114,6 +127,7 @@ def generate(
     start_time = time.time()
     token_count = 0
     context_length = 0
+    eval_count = 0
 
     try:
         for line in response.iter_lines():
@@ -135,6 +149,7 @@ def generate(
                 context_length = chunk.get("context", 0)
                 if isinstance(context_length, list):
                     context_length = len(context_length)
+                eval_count = chunk.get("eval_count", token_count)
                 break
 
     except requests.exceptions.ChunkedEncodingError as e:
@@ -146,11 +161,14 @@ def generate(
     if stream_to_stdout:
         print()  # newline after streamed output
 
+    status = "bailed" if eval_count == 0 else "complete"
+
     return {
         "text": "".join(full_text),
         "model": model,
         "model_digest": digest,
         "tokens_per_second": tokens_per_second,
         "context_length": context_length,
-        "status": "complete",
+        "eval_count": eval_count,
+        "status": status,
     }

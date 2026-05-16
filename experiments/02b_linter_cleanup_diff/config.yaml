@@ -1,0 +1,61 @@
+# =============================================================================
+# experiments/02b_linter_cleanup_diff/config.yaml
+# Linter cleanup diff experiment — overrides experiment_base.yaml
+#
+# Variant of 02a that asks Gemma to output a unified diff instead of
+# the full corrected file. Tests whether a smaller, more constrained
+# output format reduces hallucination and feature extraction on large files.
+#
+# No repeat penalty — isolates the prompt format as the single variable.
+# =============================================================================
+
+experiment:
+  name: linter_cleanup_diff
+  description: >
+    Ask Gemma to fix pylint complaints by outputting a unified diff rather
+    than the full corrected file. Tests whether constraining the output format
+    to a diff reduces hallucination, feature extraction, and token overrun
+    on large files. No repeat penalty applied — prompt format is the
+    single variable being tested.
+  experiment_version: 1
+  target_repo: https://github.com/carolynboyle/dev-utils
+  target_branch: ~
+
+model:
+  temperature: 0.1               # minimum variation — mechanical fixes only
+  max_tokens: 400                # diffs are short — a 15-line diff needs ~100
+                                 # tokens; 400 is generous ceiling
+
+prompts:
+  prompt_dir: prompts/
+  prompts:
+    - file: cleanup_diff.md
+      label: cleanup_diff
+      description: >
+        Per-file unified diff instructions. Receives pylint report and
+        file contents. Returns a unified diff of only the changed lines.
+        {{ target_file }} — file path
+        {{ file_contents }} — full source
+        {{ pylint_report }} — pylint JSON for this file only
+
+repo_read:
+  repo: dev_utils
+  per_file: true
+  max_chars: 40000
+
+results:
+  results_dir: results/
+  output: per_run
+
+fix_categories:
+  auto_fix:
+    - missing docstrings
+    - missing final newline
+    - trailing whitespace
+    - line length violations
+  review_required:
+    - unused imports
+  out_of_scope:
+    - max-args violations
+    - max-branches violations
+    - naming convention violations

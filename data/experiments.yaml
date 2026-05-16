@@ -31,16 +31,29 @@ experiments:
       standardizes README files for every tool in dev-utils. No code changes.
       Safe to run first or at any time.
 
-  - number: "02"
+  - number: "02a"
     name: linter_cleanup
     risk: low
     depends_on: []
     enabled: true
-    config: experiments/02_linter_cleanup/config.yaml
+    config: experiments/02a_linter_cleanup/config.yaml
     notes: >
-      Mechanical fixes only. Pylint baseline captured before any changes.
-      Unused import removal is review_required — everything else is auto_fix
-      after human review. One file at a time. Staging mandatory.
+      Full file output. Repeat penalty applied (1.3) and token ceiling
+      tightened (800) to break e2b loop failure mode. Rerun of original
+      experiment with these mitigations to compare against baseline.
+      Unused import removal is review_required. One file at a time.
+
+  - number: "02b"
+    name: linter_cleanup_diff
+    risk: low
+    depends_on: []
+    enabled: true
+    config: experiments/02b_linter_cleanup_diff/config.yaml
+    notes: >
+      Diff output format. No penalty — isolates the prompt format variable.
+      Instead of returning the full fixed file, Gemma returns a unified diff.
+      Tests whether a smaller output target reduces hallucination and feature
+      extraction on large files like fletcher.py.
 
   - number: "03"
     name: srb_animation
