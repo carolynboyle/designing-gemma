@@ -2,7 +2,7 @@
 
 **Path:** docs/change/designing-gemma-corpus-path-fix.md
 **Syntax:** markdown
-**Generated:** 2026-05-14 07:38:25
+**Generated:** 2026-05-15 14:53:19
 
 ```markdown
 # Changeset: Corpus Path Resolution Fix

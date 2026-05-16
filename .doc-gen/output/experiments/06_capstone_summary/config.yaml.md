@@ -1,0 +1,52 @@
+# config.yaml
+
+**Path:** experiments/06_capstone_summary/config.yaml
+**Syntax:** yaml
+**Generated:** 2026-05-15 14:53:19
+
+```yaml
+# =============================================================================
+# experiments/06_capstone_summary/config.yaml
+# Final capstone summary — overrides experiment_base.yaml
+#
+# Auto-triggered after all generative experiments complete (01-05).
+# Produces a full-run factual summary that feeds into 07_capstone_readme.
+#
+# Voice: neutral — factual, no personality, no signature.
+# =============================================================================
+
+experiment:
+  name: capstone_summary
+  description: >
+    Produce a factual neutral-voice summary of the complete run. Reports
+    all experiments that ran, both models, all output files staged, what
+    was applied, and what was skipped. No interpretation, no voice, no
+    signature. Output feeds into 07_capstone_readme as context for Gemma
+    when writing the voiced README.
+  experiment_version: 1
+  target_repo: ~                 # generative only — no target repo
+  target_branch: ~
+
+model:
+  temperature: 0.1               # minimum variation — factual reporting only
+
+inject_run_log: true
+
+prompts:
+  prompt_dir: prompts/
+  prompts:
+    - file: summary.md
+      label: summary
+      description: >
+        Neutral factual summary prompt. Receives full run_log.yaml contents
+        via Jinja2 template variable {{ run_log }}. Covers all experiments
+        in sequence. Output is injected as {{ capstone_summary }} into the
+        07_capstone_readme prompts so Gemma has factual grounding before
+        writing in voice.
+
+results:
+  results_dir: results/
+  output: per_run
+
+
+```

@@ -2,7 +2,7 @@
 
 **Path:** docs/design/manifest-filter-design.md
 **Syntax:** markdown
-**Generated:** 2026-05-14 07:38:25
+**Generated:** 2026-05-15 14:53:19
 
 ```markdown
 # Design Doc: manifest_filter.py

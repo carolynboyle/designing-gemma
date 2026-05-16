@@ -2,7 +2,7 @@
 
 **Path:** src/designing_gemma/prompt_loader.py
 **Syntax:** python
-**Generated:** 2026-05-14 07:38:25
+**Generated:** 2026-05-15 14:53:19
 
 ```python
 # =============================================================================

@@ -2,7 +2,7 @@
 
 **Path:** experiments/03_srb_animation/prompts/animation.md
 **Syntax:** markdown
-**Generated:** 2026-05-14 07:38:25
+**Generated:** 2026-05-15 14:53:19
 
 ```markdown
 # Task: Sr. Barbara Animation Logic

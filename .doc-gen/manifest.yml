@@ -1,6 +1,6 @@
-# Generated: 2026-05-14 07:37:56
+# Generated: 2026-05-15 14:52:56
 # Project: /home/carolyn/projects/designing-gemma
-# Files: 84
+# Files: 86
 
 version: 1
 documents:
@@ -24,15 +24,19 @@ documents:
 - path: data/voice_instructions/pratchett.txt
 - path: data/voices.yaml
 - path: docker-compose.yml
+- path: docs/change/designing-gemma-context-logging.md
 - path: docs/change/designing-gemma-corpus-path-fix.md
 - path: docs/change/designing-gemma-env-fix.md
 - path: docs/change/designing-gemma-repo-context.md
 - path: docs/change/designing-gemma-size-overrides.md
+- path: docs/change/repo-reader-methods-render.md
+- path: docs/change/skeleton-extractor-refactor.md
 - path: docs/change/srb_animation_config.md
 - path: docs/design/06_srb_sentence_gen_design.md
 - path: docs/design/DOCKER_SETUP.md
 - path: docs/design/handoff-2026-05-10.md
 - path: docs/design/handoff-2026-05-12.md
+- path: docs/design/handoff-2026-05-13.md
 - path: docs/design/manifest-filter-design.md
 - path: docs/post/post-notes.md
 - path: docs/project-structure.md
@@ -50,24 +54,22 @@ documents:
 - path: experiments/04_pkg_restructure/config.yaml
 - path: experiments/04_pkg_restructure/prompts/restructure.md
 - path: experiments/04_pkg_restructure/results/.gitkeep
-- path: experiments/05_capstone_summary/config.yaml
-- path: experiments/05_capstone_summary/prompts/summary.md
-- path: experiments/05_capstone_summary/results/.gitkeep
-- path: experiments/06_srb_sentence_gen/config.yaml
-- path: experiments/06_srb_sentence_gen/corpora/ankh_morpork_excerpt.txt
-- path: experiments/06_srb_sentence_gen/corpora/hhg_excerpt.txt
-- path: experiments/06_srb_sentence_gen/corpora/terminator_excerpt.txt
-- path: experiments/06_srb_sentence_gen/prompts/guided.md
-- path: experiments/06_srb_sentence_gen/prompts/unguided.md
-- path: experiments/06_srb_sentence_gen/results/.gitkeep
-- path: experiments/07_capstone_summary/config.yaml
-- path: experiments/07_capstone_summary/prompts/summary.md
-- path: experiments/07_capstone_summary/results/.gitkeep
-- path: experiments/08_capstone_readme/config.yaml
-- path: experiments/08_capstone_readme/prompts/annihilator.md
-- path: experiments/08_capstone_readme/prompts/hitchhiker.md
-- path: experiments/08_capstone_readme/prompts/kafka.md
-- path: experiments/08_capstone_readme/results/.gitkeep
+- path: experiments/05_srb_sentence_gen/config.yaml
+- path: experiments/05_srb_sentence_gen/corpora/austen
+- path: experiments/05_srb_sentence_gen/corpora/doyle
+- path: experiments/05_srb_sentence_gen/corpora/kafka
+- path: experiments/05_srb_sentence_gen/corpora/wodehouse
+- path: experiments/05_srb_sentence_gen/prompts/guided.md
+- path: experiments/05_srb_sentence_gen/prompts/unguided.md
+- path: experiments/05_srb_sentence_gen/results/.gitkeep
+- path: experiments/06_capstone_summary/config.yaml
+- path: experiments/06_capstone_summary/prompts/summary.md
+- path: experiments/06_capstone_summary/results/.gitkeep
+- path: experiments/07_capstone_readme/config.yaml
+- path: experiments/07_capstone_readme/prompts/annihilator.md
+- path: experiments/07_capstone_readme/prompts/hitchhiker.md
+- path: experiments/07_capstone_readme/prompts/kafka.md
+- path: experiments/07_capstone_readme/results/.gitkeep
 - path: experiments/_prompt_templates/gemini_prompt_for_creative_prompts.md
 - path: pyproject.toml
 - path: src/designing_gemma/__init__.py

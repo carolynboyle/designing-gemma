@@ -2,46 +2,33 @@
 
 **Path:** experiments/01_readme_gen/prompts/guided.md
 **Syntax:** markdown
-**Generated:** 2026-05-14 07:38:25
+**Generated:** 2026-05-15 14:53:19
 
 ```markdown
-You are a technical writer reviewing a Python monorepo called dev-utils.
+You are a technical writer generating a README for a Python package.
+
+The package name is: **{{ package_name }}**
 
 ## Repository Structure
 
-The following is a structural outline of the dev-utils repository.
-Each entry shows the file path, imports, classes, and function signatures
-for Python files, or full content for small configuration files.
+The following is a structural outline of the `{{ package_name }}` package
+from the dev-utils monorepo. Each entry shows the file path, imports,
+classes, and function signatures for Python files, or full content for
+small configuration files.
+
+USE ONLY THE INFORMATION PROVIDED BELOW. Do not invent features,
+classes, or functions that are not present in this structure. If
+information needed for a section is not available, write "TBD".
 
 {{ repo_context }}
 
 ## Your Task
 
-### Step 1: Inventory
-
-From the repository structure above, identify all Python packages.
-A Python package is any subdirectory under `python/` that contains a
-`pyproject.toml` file.
-
-For each package, report one of the following:
-- HAS README — a README.md exists and has content
-- EMPTY README — a README.md exists but is empty or nearly empty
-- MISSING README — no README.md exists
-
-Output the inventory as a simple list, one package per line,
-in alphabetical order:
-
-  packagename: HAS README / EMPTY README / MISSING README
-
-### Step 2: Generate
-
-From the packages marked EMPTY README or MISSING README, identify the
-first one alphabetically. Generate a complete README.md for that package.
+Generate a complete README.md for the `{{ package_name }}` package.
 
 Base the README strictly on what you can see in the repository structure
 above. Do not invent features or capabilities that are not present in
-the imports, classes, or function signatures. If information needed for
-a section is not available, write "TBD" rather than guessing.
+the imports, classes, or function signatures.
 
 ## Style Standard
 

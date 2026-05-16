@@ -1,0 +1,19 @@
+# session_log.txt — designing-gemma
+# Started : 2026-05-16T10:12:41
+# Rename this file to keep it — overwritten on next run.
+
+
+======================================================================
+  Designing Gemma  v0.1.0
+======================================================================
+  A structured experiment framework for local LLM evaluation.
+  Don't Panic.
+
+  Session log: /home/carolyn/projects/designing-gemma/session_log.txt
+
+Checking Ollama connection...
+  ERROR: Cannot reach Ollama at http://localhost:11434
+  Make sure Ollama is running: ollama serve
+
+
+# Ended : 2026-05-16T10:12:41

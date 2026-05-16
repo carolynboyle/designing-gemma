@@ -2,7 +2,7 @@
 
 **Path:** experiments/01_readme_gen/config.yaml
 **Syntax:** yaml
-**Generated:** 2026-05-14 07:38:25
+**Generated:** 2026-05-15 14:53:19
 
 ```yaml
 # =============================================================================
@@ -49,13 +49,16 @@ prompts:
         when given a complete spec.
 
 repo_read:
+  per_package: true
   repo: dev_utils
   manifest: .doc-gen/manifest.python.yml
   manifest_filter:
     source: .doc-gen/manifest.yml
     include:
       - python/
-  max_chars: 40000
+  max_chars: 80000
   size_overrides:
     - python/fletcher/README.md
+
+    
 ```

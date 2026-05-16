@@ -2,7 +2,7 @@
 
 **Path:** data/voice_instructions/kafka.txt
 **Syntax:** text
-**Generated:** 2026-05-14 07:38:25
+**Generated:** 2026-05-15 14:53:19
 
 ```text
 # Voice Instruction Set: Gregor Samsa (Kafka's The Metamorphosis)

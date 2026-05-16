@@ -4,11 +4,19 @@
 # Interactive CLI — pauses between experiments for human review.
 # Entry point: designing-gemma (see pyproject.toml)
 # =============================================================================
+"""
+Experiment runner for the designing-gemma LLM evaluation framework.
+
+Orchestrates experiment runs end-to-end: loads config, builds repo context,
+iterates over packages or files, renders prompts, calls Ollama, and writes
+results. Interactive CLI — pauses between experiments for human review.
+"""
 
 import io
 import re
 import sys
 import datetime
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -182,18 +190,21 @@ def _load_run_log(results_dir: Path) -> str:
 # Output file
 # =============================================================================
 
-def _output_filename(
+def _output_filename(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     run_id: str,
     model: str,
     prompt_label: str,
     corpus_label: str | None = None,
     package_name: str | None = None,
+    file_label: str | None = None,
 ) -> str:
     """Build a result filename from run metadata."""
     model_slug = model.replace(":", "-").replace("/", "-")
     parts = [run_id, model_slug, prompt_label]
     if package_name:
         parts.append(package_name)
+    if file_label:
+        parts.append(file_label)
     if corpus_label:
         parts.append(corpus_label)
     return "_".join(parts) + ".txt"
@@ -207,7 +218,7 @@ def _write_output(results_dir: Path, filename: str, text: str) -> Path:
     return out_path
 
 
-def _write_context_snapshot(
+def _write_context_snapshot(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     results_dir: Path,
     context_text: str,
     repo_key: str,
@@ -248,7 +259,7 @@ def _write_context_snapshot(
 
 
 # =============================================================================
-# Package discovery and filtering
+# Package and file discovery
 # =============================================================================
 
 def _discover_packages(skeleton_data: dict) -> list[str]:
@@ -307,6 +318,61 @@ def _filter_skeleton_for_package(
     }
 
 
+def _discover_python_files(skeleton_data: dict) -> list[str]:
+    """
+    Discover Python source files from skeleton data.
+
+    Returns a sorted list of file paths (relative to repo root) for all
+    entries with type 'python' or 'python_unparseable'. Used by the
+    per-file iteration mode in linter_cleanup and similar experiments.
+
+    Args:
+        skeleton_data: Output of build_skeleton().
+
+    Returns:
+        Sorted list of relative file path strings, e.g.
+        ["python/dbkit/dbkit.py", "python/fletcher/fletcher.py"]
+    """
+    files = []
+    for entry in skeleton_data.get("files", []):
+        if entry.get("type") in ("python", "python_unparseable"):
+            path = entry.get("path", "")
+            if path:
+                files.append(path)
+    return sorted(files)
+
+
+def _run_pylint(abs_path: Path) -> str:
+    """
+    Run pylint against a single file and return the JSON report as a string.
+
+    Pylint exits non-zero on any finding — we capture output regardless of
+    exit code and treat the JSON as the result. If pylint is not available
+    or the run fails entirely, returns a descriptive error string instead.
+
+    Args:
+        abs_path: Absolute path to the Python file to lint.
+
+    Returns:
+        JSON string from pylint stdout, or an error message string.
+    """
+    try:
+        result = subprocess.run(
+            ["pylint", "--output-format=json", str(abs_path)],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+        # pylint exits 0 (clean), 4 (warnings), 8 (errors), 16 (usage error)
+        # anything except 16 (usage/crash) is a valid report
+        if result.returncode == 16 or (not result.stdout and result.returncode != 0):
+            return f"[pylint error: {result.stderr.strip() or 'no output'}]"
+        return result.stdout or "[]"
+    except FileNotFoundError:
+        return "[pylint not found — is it installed in this environment?]"
+
+
 # =============================================================================
 # Single experiment run
 # =============================================================================
@@ -322,7 +388,7 @@ def _run_experiment(experiment_entry: dict) -> bool:
         True if the experiment completed (even partially),
         False if the user skipped it.
     """
-    global RUN_ALL
+    global RUN_ALL  # pylint: disable=global-statement
 
     name        = experiment_entry.get("name", "unknown")
     number      = experiment_entry.get("number", "??")
@@ -388,11 +454,12 @@ def _run_experiment(experiment_entry: dict) -> bool:
     # Load repo context if experiment specifies repo_read
     repo_read     = config.get("repo_read")
     skeleton_data = None
+    max_chars     = 40_000
 
     if repo_read:
         repo_key       = repo_read.get("repo")
         repo_root      = Path(repos.get(repo_key, ""))
-        max_chars      = repo_read.get("max_chars", 40_000)
+        max_chars      = repo_read.get("max_chars", max_chars)
         size_overrides = repo_read.get("size_overrides") or None
         manifest_path  = repo_read.get("manifest", ".doc-gen/manifest.yml")
 
@@ -414,8 +481,11 @@ def _run_experiment(experiment_entry: dict) -> bool:
             print(f"  ERROR building skeleton: {e}")
             return False
 
-    # Determine iteration mode — per-package or single pass
-    packages = []
+    # Determine iteration mode — per-package, per-file, or single pass
+    packages       = []
+    py_files       = []
+    repo_root_path = Path()
+
     if skeleton_data and repo_read.get("per_package", False):
         packages = _discover_packages(skeleton_data)
         if packages:
@@ -429,15 +499,159 @@ def _run_experiment(experiment_entry: dict) -> bool:
             if pkg_choice == "a":
                 RUN_ALL = True
         else:
-            print("  WARNING: no packages found in skeleton data — running without per-package iteration.")
+            print(
+                "  WARNING: no packages found in skeleton data"
+                " — running without per-package iteration."
+            )
 
-    # If no packages discovered (or per_package not set), run as single pass
+    elif skeleton_data and repo_read.get("per_file", False):
+        repo_root_path = Path(repos.get(repo_read.get("repo", ""), ""))
+        py_files = _discover_python_files(skeleton_data)
+        if py_files:
+            print(f"\n  Python files found: {len(py_files)}")
+            for f in py_files:
+                print(f"    {f}")
+            file_choice = _pause(
+                "\nPress ENTER to confirm between files, 'a' to run all, 'q' to quit: "
+            )
+            if file_choice == "q":
+                print("Quitting.")
+                sys.exit(0)
+            if file_choice == "a":
+                RUN_ALL = True
+        else:
+            print(
+                "  WARNING: no Python files found in skeleton data"
+                " — running without per-file iteration."
+            )
+
+    # If no packages or files discovered (or neither mode set), run as single pass
     if not packages:
         packages = [None]
 
+    # ==========================================================================
+    # Per-file iteration mode
+    # ==========================================================================
+    if py_files:
+        for file_idx, rel_path in enumerate(py_files):
+            abs_path  = repo_root_path / rel_path
+            file_stem = Path(rel_path).stem
+
+            _subheader(f"File: {rel_path}  ({file_idx + 1}/{len(py_files)})")
+
+            # Read file contents
+            if not abs_path.exists():
+                print(f"  WARNING: file not found at {abs_path} — skipping")
+                continue
+            file_contents = abs_path.read_text(encoding="utf-8")
+
+            # Run pylint
+            print(f"  Running pylint against {rel_path} ...")
+            pylint_report = _run_pylint(abs_path)
+            print(f"  Pylint report: {len(pylint_report)} chars")
+
+            for prompt_def in prompts:
+                prompt_file  = prompt_def.get("file")
+                prompt_label = prompt_def.get("label", prompt_file)
+
+                context = dict(base_context)
+                context["target_file"]   = rel_path
+                context["file_contents"] = file_contents
+                context["pylint_report"] = pylint_report
+
+                try:
+                    rendered_prompt = load_prompt(prompt_file, prompt_dir, context)
+                except PromptError as e:
+                    print(f"  ERROR rendering prompt {prompt_file}: {e}")
+                    continue
+
+                for model_def in models:
+                    model_name   = model_def.get("name")
+                    model_digest = model_def.get("digest")
+
+                    run_id = _run_id(results_dir)
+
+                    _subheader(f"{prompt_label} / {file_stem} / {model_name}")
+
+                    try:
+                        result = generate(
+                            model=model_name,
+                            prompt=rendered_prompt,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            digest=model_digest,
+                            stream_to_stdout=True,
+                        )
+                    except OllamaError as e:
+                        print(f"\n  ERROR: {e}")
+                        result = {
+                            "text": "",
+                            "model": model_name,
+                            "model_digest": model_digest,
+                            "tokens_per_second": 0.0,
+                            "context_length": 0,
+                            "status": "failed",
+                        }
+
+                    out_filename = _output_filename(
+                        run_id, model_name, prompt_label,
+                        file_label=file_stem,
+                    )
+                    out_path = _write_output(results_dir, out_filename, result["text"])
+
+                    log_entry = {
+                        "id":                 run_id,
+                        "timestamp":          datetime.datetime.now().isoformat(),
+                        "experiment":         name,
+                        "experiment_version": (
+                            config.get("experiment", {}).get("experiment_version", 1)
+                        ),
+                        "model":              result["model"],
+                        "model_digest":       result["model_digest"],
+                        "prompt_file":        str(prompt_dir / prompt_file),
+                        "prompt_label":       prompt_label,
+                        "target_file":        rel_path,
+                        "corpus_label":       None,
+                        "output_file":        str(out_path),
+                        "tokens_per_second":  result["tokens_per_second"],
+                        "context_length":     result["context_length"],
+                        "status":             result["status"],
+                        "documented":         [],
+                        "tags":               [],
+                        "notes":              None,
+                    }
+                    _append_run_log(results_dir, log_entry)
+
+                    print(f"\n  Written : {out_path}")
+                    print(f"  Speed   : {result['tokens_per_second']} tok/s")
+                    print(f"  Status  : {result['status']}")
+
+            # Per-file confirmation pause (skipped if RUN_ALL)
+            if not RUN_ALL:
+                remaining = len(py_files) - file_idx - 1
+                if remaining > 0:
+                    file_choice = _pause(
+                        f"\n  {remaining} file(s) remaining. "
+                        "Press ENTER to continue, 'a' for all, 's' to skip rest, 'q' to quit: "
+                    )
+                    if file_choice == "q":
+                        print("Quitting.")
+                        sys.exit(0)
+                    if file_choice == "s":
+                        print("  Skipping remaining files.")
+                        break
+                    if file_choice == "a":
+                        RUN_ALL = True
+
+        return True
+
+    # ==========================================================================
+    # Per-package iteration mode (or single pass if packages = [None])
+    # ==========================================================================
     for package_name in packages:
         if package_name:
-            _subheader(f"Package: {package_name}  ({packages.index(package_name) + 1}/{len(packages)})")
+            pkg_num = packages.index(package_name) + 1
+            _subheader(f"Package: {package_name}  ({pkg_num}/{len(packages)})")
 
         # Build repo context for this package (or full repo if no package)
         if skeleton_data:
@@ -458,7 +672,10 @@ def _run_experiment(experiment_entry: dict) -> bool:
                     package_name=package_name,
                 )
                 if result["truncated"]:
-                    print(f"  WARNING: repo context truncated — {result['files_excluded']} file(s) omitted")
+                    print(
+                        f"  WARNING: repo context truncated"
+                        f" — {result['files_excluded']} file(s) omitted"
+                    )
             except RepoReaderError as e:
                 print(f"  ERROR loading repo context: {e}")
                 continue
@@ -538,7 +755,9 @@ def _run_experiment(experiment_entry: dict) -> bool:
                         "id":                 run_id,
                         "timestamp":          datetime.datetime.now().isoformat(),
                         "experiment":         name,
-                        "experiment_version": config.get("experiment", {}).get("experiment_version", 1),
+                        "experiment_version": (
+                            config.get("experiment", {}).get("experiment_version", 1)
+                        ),
                         "model":              result["model"],
                         "model_digest":       result["model_digest"],
                         "prompt_file":        str(prompt_dir / prompt_file),
