@@ -1,9 +1,6 @@
 # Sentence Generation Task (Unguided)
 
 You are extracting grammatically suitable sentences for a Reed-Kellogg sentence diagramming game.
-Before writing anything, check the repository structure for any .py file 
-with a size of 0kb. If any exists, output only: 
-`# SKIPPED: {{ package_name }} — package incomplete` and stop.
 
 ## Context
 
