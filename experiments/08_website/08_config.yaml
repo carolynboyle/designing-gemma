@@ -1,0 +1,78 @@
+# =============================================================================
+# experiments/08_dashboard/config.yaml
+# Dashboard generation experiment — overrides experiment_base.yaml
+#
+# Role-split experiment: tasks assigned by demonstrated model strengths.
+# e4b (architect) — complex data parsing, multi-file structure, build logic
+# e2b (frontend)  — focused UI layout, CSS, htmx integration
+# Both models     — independent color scheme selection
+#
+# This experiment is NOT run through the standard per-file or per-package
+# loop. It is a one-shot generative task. Prompts are run manually against
+# specific models as documented below.
+#
+# Prompt → Model assignment (derived from experiments 01-07 findings):
+#   architect.md    → gemma4:e4b only
+#   frontend.md     → gemma4:e2b only (receives e4b output as context)
+#   theme_choice.md → both models independently
+#
+# Output: static site in dist/ suitable for GitHub Pages deployment.
+# =============================================================================
+
+experiment:
+  name: dashboard
+  description: >
+    Role-split experiment. Tasks assigned by demonstrated model strengths
+    derived from experiments 01-07. e4b writes the Python build script
+    that compiles experiment data into static HTML fragments. e2b receives
+    e4b's output and fills in the UI chassis and htmx integration. Both
+    models independently choose a color palette for the dashboard. The
+    website includes a theme toggle button that swaps between the two
+    palettes live in the browser — making each model's aesthetic judgment
+    directly comparable. Tests whether role assignment by demonstrated
+    strength produces better results than having both models attempt
+    the same task.
+  experiment_version: 1
+  target_repo: https://github.com/carolynboyle/designing-gemma
+  target_branch: ~
+
+model:
+  temperature: 0.3               # slightly higher — creative latitude for
+                                 # UI and color decisions
+  max_tokens: 4096               # build script and UI generation need room
+
+prompts:
+  prompt_dir: prompts/
+  prompts:
+    - file: architect.md
+      label: architect
+      model_override: gemma4:e4b   # documented intent — run manually
+      description: >
+        e4b only. Generates build.py — the Python compiler that reads
+        experiments/, data/experiments.yaml, and per-experiment run_log.yaml,
+        then writes HTML fragments and index.html into dist/.
+        Constrained to stdlib + pyyaml to prevent hallucination.
+        Includes generate_ui_chassis() placeholder for e2b handoff.
+
+    - file: frontend.md
+      label: frontend
+      model_override: gemma4:e2b   # documented intent — run manually
+      description: >
+        e2b only. Receives e4b's build.py as context. Fills in the
+        generate_ui_chassis() placeholder with the kanban dashboard layout,
+        htmx sidebar integration, and theme switcher button. CSS uses
+        :root variables defined by the theme files — no hardcoded colors.
+
+    - file: theme_choice.md
+      label: theme_choice
+      model_override: both         # both models independently — compare results
+      description: >
+        Both models independently. Each model chooses a color palette that
+        reflects the nature of the designing-gemma project and explains
+        their choice. Output is a standalone CSS file with :root variables
+        only. The two theme files are loaded as dist/themes/e2b.css and
+        dist/themes/e4b.css. The toggle button in the UI swaps between them.
+
+results:
+  results_dir: results/
+  output: per_run

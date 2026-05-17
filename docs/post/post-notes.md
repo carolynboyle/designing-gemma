@@ -143,6 +143,11 @@ paving, because obviously.
   (creative/voice prompts) should be documented explicitly. It's a
   genuine insight about multi-LLM workflows.
 
+- The Dev.to contest is a way for Google to get unpaid software
+  debugging done. Worth acknowledging this openly — it doesn't make
+  the work less valuable, but clear eyes about what's happening is
+  on-brand for this post.
+
 ---
 
 ## Section Heading (keep this one)
@@ -152,6 +157,135 @@ paving, because obviously.
 Covers: Kafka training data finding, e2b vs e4b hallucination contrast,
 empty prompt files producing instant completions, anything else that
 fell out of the gaps between what was planned and what actually ran.
+
+---
+
+## Experiment 02 (Linter Cleanup) — Key Findings
+
+This experiment was supposed to be the easy one. Fix trailing whitespace
+and missing docstrings. It produced the most interesting findings of
+the entire project.
+
+### The failure mode taxonomy
+
+Five distinct failure modes observed across 81 files × 2 models:
+
+1. **Bail** (eval_count = 0) — e2b emits immediate EOS, returns nothing.
+   Clean signal, easy to detect programmatically.
+2. **Loop** — e2b repeats the same function stub endlessly until token
+   limit. Deterministic, catchable with repetition detection.
+3. **Truncation** — e2b runs out of token budget mid-correct-output.
+   Was producing the right thing, just ran out of room.
+4. **Feature extraction** — both models identify the most semantically
+   distinctive section of a file, reproduce only that, discard the rest.
+5. **Correct** — both models on finished, coherent, single-purpose files.
+
+### Feature extraction blindness
+
+Fletcher is 607 lines of finished, daily-use code. It reads a
+Dr. Filewalker manifest and generates GitHub raw URLs. The name is
+precise: a fletcher makes arrows; this tool makes pointers.
+
+The pylint complaints were: four trailing spaces and one missing docstring.
+
+Both models saw 607 lines, found the git branch detection section
+(~80 lines), and discarded the other 525 lines entirely.
+
+- e2b: extracted function names, generated mock stubs, then looped.
+- e4b: read the git detection code, understood it, rewrote it in its
+  own style using os.popen instead of subprocess, built a new main()
+  around only that functionality. Confident. Wrong. Unusable.
+
+Neither model hallucinated from nothing. They both performed feature
+extraction — identified the most recognizable pattern and amplified it,
+discarding everything that made the tool what it actually is.
+
+The models didn't fail because fletcher is complicated. Fletcher is the
+simplest package in the repo. They failed because git detection is
+semantically loud to a model trained on millions of git utilities.
+The string concatenation that is the actual point of the tool was
+invisible to them.
+
+**Finding:** Feature extraction blindness is triggered by semantic
+weight, not code complexity. A simple tool with one high-signal section
+is more dangerous than a complex tool with uniform signal distribution.
+
+### Context window truncation as a cause
+
+The Ollama server log showed at least two calls with:
+`truncating input prompt: limit=4096 prompt=4331`
+
+Fletcher at ~2000 tokens of source + pylint report + prompt was
+exceeding the context window on e2b. The model wasn't just choosing
+to ignore the string concatenation — in some cases it literally
+couldn't see it.
+
+### Incomplete code behavior
+
+mcpkit is an unfinished package. Both models behaved very differently
+on incomplete vs finished code:
+- Finished code (setupkit, viewkit): mostly correct output
+- Incomplete code (mcpkit): confident hallucination (e4b) or loops (e2b)
+
+**Finding:** These models are only safe for automated cleanup on
+finished, stable code. Running on work-in-progress is actively
+dangerous — the model will complete your unfinished work with whatever
+it imagines belongs there.
+
+### Pylint report size as predictor
+
+Strong correlation between pylint report size and failure mode:
+- Small reports (353 chars): mostly correct output
+- Large reports (6000+ chars): increased hallucination
+- Very large reports (16000-36000 chars): near-certain hallucination
+
+test_view_builder.py had a 36,654 char pylint report. Both models
+hallucinated completely.
+
+### The wall clock time finding
+
+The baseline 02 run processed 81 files × 2 models with file-outer,
+model-inner loop order. Every file required two model load/evict cycles.
+Ollama logs showed each swap taking 3-5 seconds of pure overhead.
+Total run time: [INSERT FROM session_log_baseline_02_2026-05-16.txt]
+
+After restructuring to model-outer, file-inner loop order:
+Total run time: [INSERT FROM 02a session log]
+
+Each model loads once, processes all 81 files, then unloads.
+The improvement is a practical finding for anyone running local LLM
+experiments on consumer hardware with limited VRAM.
+
+**Finding:** Iteration order matters for local inference in ways it
+doesn't for API calls. Naive loop structure can add significant
+overhead that has nothing to do with the actual task.
+
+### Reproducibility
+
+TODO: Run 02a twice without changing anything. Compare output pairs.
+At temperature 0.1, output should be highly deterministic — but does
+e4b hallucinate fletcher the same way twice? Does e2b loop on the same
+files? Variance across runs at low temperature is an underexplored
+angle in local LLM evaluation writing.
+
+### The Gemini consultation
+
+Used Gemini to analyze the findings mid-experiment. Gemini's analysis
+of why e4b hallucinates vs e2b's failure modes was accurate and useful.
+Key term from Gemini: "Feature Extraction Blindness."
+
+The consultation itself is worth documenting — using one AI to help
+evaluate another is a legitimate multi-LLM workflow finding. Claude
+handled mechanical code work; Gemini provided analysis of model behavior.
+Each had a distinct role.
+
+### The results web UI
+
+TODO: Build a single static HTML file that reads run_log.yaml and
+result text files, renders results in the browser. Side-by-side
+e2b vs e4b comparison per file, filterable by status (complete /
+bailed / looped / truncated). No server needed — fits offline-first
+philosophy. Potentially generated by Gemma as a demonstration.
 
 ---
 
@@ -216,6 +350,13 @@ See if anyone reads.
 - **One post per dev-utils tool** — fletcher, imagekit, setupkit, etc.
   Each has an origin story.
 
+- **Reproducibility in local LLM evaluation** — does e4b hallucinate
+  fletcher the same way twice? Variance at low temperature is an
+  underexplored topic.
+
+- **Local LLM hardware constraints** — iteration order, VRAM pressure,
+  model swap overhead. Practical findings for consumer hardware.
+
 ---
 
 ## Curator / Postgres Integration
@@ -259,18 +400,17 @@ the missing extension, the Apple password hostage situation.
 Write as a separate whycantyoujust.tech blog post when the contest
 is done.
 
-Looking at those notes made me realize that the smaller model saying "I can't do that" instead of making shit up the way the larger model did makes me think I'd rather use the "less capable" model because I might not have to fact check it as often.
+Looking at those notes made me realize that the smaller model saying
+"I can't do that" instead of making shit up the way the larger model
+did makes me think I'd rather use the "less capable" model because I
+might not have to fact check it as often.
 
-8:49 PM
-Claude responded: That's a genuinely interesting finding and it's worth stating clearly in the post: calibrated refusal is a feature, not a limitation.
-That's a genuinely interesting finding and it's worth stating clearly in the post: calibrated refusal is a feature, not a limitation.
+Calibrated refusal is a feature, not a limitation. e2b said "I have
+no filesystem context" — accurate and useful. e4b invented a complete
+fictional repo with confidence — wrong, requires fact-checking.
 
-e2b said "I have no filesystem context" — which is accurate and useful. e4b invented a complete fictional repo with confidence — which is wrong and requires fact-checking before anything can be trusted.
-
-For production use where correctness matters more than fluency, a model that knows what it doesn't know is more valuable than one that fills gaps with plausible-sounding fiction. That's not "less capable" — that's better epistemic behavior.
-
-It also has implications for how you design prompts. If e2b refuses cleanly when context is missing, it's actually a better signal that your context injection is working correctly. When e4b hallucinates, you might not notice the problem until you read the output carefully.
-
-Add this to post-notes.md under "Interesting Things I Found Because I Forgot Things" — it's one of the best findings of the day. The model everyone would assume is inferior turned out to be more trustworthy in exactly the conditions where trustworthiness matters most.
-
-Ready to get back to the changeset?
+For production use where correctness matters more than fluency, a model
+that knows what it doesn't know is more valuable than one that fills
+gaps with plausible-sounding fiction. It also has implications for
+prompt design: if e2b refuses cleanly when context is missing, it's
+a reliable signal that context injection is working correctly.
