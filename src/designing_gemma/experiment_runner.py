@@ -396,7 +396,34 @@ def _run_pylint(abs_path: Path) -> str:
     except FileNotFoundError:
         return "[pylint not found — is it installed in this environment?]"
 
+def _package_has_empty_py_files(skeleton_data: dict, package_name: str) -> bool:
+    """
+    Return True if any .py file in the package has no imports, classes,
+    or functions — the signature of an empty stub file.
 
+    Used to skip incomplete packages in per-package experiments rather
+    than passing empty context to the model and getting hallucinated output.
+
+    Args:
+        skeleton_data: Output of build_skeleton().
+        package_name:  Package directory name, e.g. "contactkit".
+
+    Returns:
+        True if any empty .py file is found in the package.
+    """
+    prefix = f"python/{package_name}/"
+    for entry in skeleton_data.get("files", []):
+        if not entry.get("path", "").startswith(prefix):
+            continue
+        if entry.get("type") != "python":
+            continue
+        if (
+            not entry.get("imports")
+            and not entry.get("classes")
+            and not entry.get("functions")
+        ):
+            return True
+    return False
 # =============================================================================
 # Single experiment run
 # =============================================================================
@@ -700,6 +727,23 @@ def _run_experiment(experiment_entry: dict) -> bool:
             try:
                 if package_name:
                     pkg_skeleton = _filter_skeleton_for_package(skeleton_data, package_name)
+
+                    # Skip incomplete packages — empty .py stubs produce
+                    # hallucinated READMEs that describe unbuilt features.
+                    if _package_has_empty_py_files(pkg_skeleton, package_name):
+                        skip_msg = f"# SKIPPED: {package_name} — package incomplete"
+                        print(f"\n  {skip_msg}")
+                        run_id = _run_id(results_dir)
+                        for prompt_def in prompts:
+                            for model_def in models:
+                                out_filename = _output_filename(
+                                    run_id,
+                                    model_def.get("name"),
+                                    prompt_def.get("label", prompt_def.get("file")),
+                                    package_name=package_name,
+                                )
+                                _write_output(results_dir, out_filename, skip_msg)
+                        continue
                 else:
                     pkg_skeleton = skeleton_data
 
