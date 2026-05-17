@@ -2,6 +2,10 @@
 
 You are extracting grammatically suitable sentences for a Reed-Kellogg sentence diagramming game and generating PostgreSQL INSERT statements for a staging database schema.
 
+Before writing anything, check the repository structure for any .py file 
+with a size of 0kb. If any exists, output only: 
+`# SKIPPED: {{ package_name }} — package incomplete` and stop.
+
 ## Context
 
 Reed-Kellogg diagramming visually represents the grammatical structure of a sentence. The game database schema separates:
