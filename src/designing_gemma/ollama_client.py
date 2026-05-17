@@ -14,9 +14,7 @@ import json
 import os
 import time
 from typing import Iterator
-
 import requests
-
 
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost")
@@ -58,6 +56,7 @@ def _stream_response(response: requests.Response) -> Iterator[str]:
                 continue
 
 
+
 def generate(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     model: str,
     prompt: str,
@@ -67,6 +66,7 @@ def generate(  # pylint: disable=too-many-arguments,too-many-positional-argument
     stream_to_stdout: bool = True,
     repeat_penalty: float = 1.0,
     repeat_last_n: int = 64,
+    num_ctx: int = 0,
 ) -> dict:
     """
     Send a prompt to Ollama and return the result with metrics.
@@ -80,6 +80,7 @@ def generate(  # pylint: disable=too-many-arguments,too-many-positional-argument
         stream_to_stdout:  If True, print tokens to stdout as they arrive
         repeat_penalty:    Repetition penalty (1.0 = disabled, 1.3 = moderate)
         repeat_last_n:     Token window for repetition penalty (0 = disabled)
+        num_ctx:           Context window size in tokens (0 = use Ollama default)
 
     Returns:
         Dict with keys:
@@ -94,16 +95,21 @@ def generate(  # pylint: disable=too-many-arguments,too-many-positional-argument
     Raises:
         OllamaError: If the API is unreachable or returns an error.
     """
+
+    options = {
+        "temperature": temperature,
+        "num_predict": max_tokens,
+        "repeat_penalty": repeat_penalty,
+        "repeat_last_n": repeat_last_n,
+    }
+    if num_ctx:
+        options["num_ctx"] = num_ctx
+
     payload = {
         "model": model,
         "prompt": prompt,
         "stream": True,
-        "options": {
-            "temperature": temperature,
-            "num_predict": max_tokens,
-            "repeat_penalty": repeat_penalty,
-            "repeat_last_n": repeat_last_n,
-        },
+        "options": options,
     }
 
     try:

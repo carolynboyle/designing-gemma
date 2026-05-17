@@ -413,6 +413,7 @@ def _run_experiment(experiment_entry: dict) -> bool:
     max_tokens     = config.get("model", {}).get("max_tokens", 2048)
     repeat_penalty = config.get("model", {}).get("repeat_penalty", 1.0)
     repeat_last_n  = config.get("model", {}).get("repeat_last_n", 64)
+    num_ctx        = config.get("model", {}).get("num_ctx", 0)
     corpora        = config.get("corpora", None)
 
     description = config.get("experiment", {}).get("description", "")
@@ -586,7 +587,9 @@ def _run_experiment(experiment_entry: dict) -> bool:
                             stream_to_stdout=True,
                             repeat_penalty=repeat_penalty,
                             repeat_last_n=repeat_last_n,
+                            num_ctx=num_ctx,
                         )
+                        
                     except OllamaError as e:
                         print(f"\n  ERROR: {e}")
                         result = {
