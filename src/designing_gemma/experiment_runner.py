@@ -42,6 +42,10 @@ RUN_ALL = False
 # Rename to keep: e.g. session_log_2026-05-14.txt
 SESSION_LOG_PATH = "session_log.txt"
 
+# Master run log — accumulates entries from all experiments.
+# Read by experiment 06 (capstone_summary) via inject_run_log: true.
+MASTER_RUN_LOG_PATH = "data/run_log_master.yaml"
+
 
 # =============================================================================
 # Session logger
@@ -154,7 +158,15 @@ def _run_id(results_dir: Path) -> str:
 
 
 def _append_run_log(results_dir: Path, entry: dict) -> None:
-    """Append a single run entry to results/run_log.yaml."""
+    """
+    Append a single run entry to results/run_log.yaml and
+    data/run_log_master.yaml.
+
+    The per-experiment log is scoped to that experiment's results dir.
+    The master log accumulates entries from all experiments and is read
+    by experiment 06 (capstone_summary) via inject_run_log: true.
+    """
+    # Per-experiment log
     log_path = results_dir / "run_log.yaml"
     log = []
     if log_path.exists():
@@ -164,21 +176,33 @@ def _append_run_log(results_dir: Path, entry: dict) -> None:
     with log_path.open("w", encoding="utf-8") as f:
         yaml.dump(log, f, allow_unicode=True, sort_keys=False)
 
+    # Master log
+    master_path = Path(MASTER_RUN_LOG_PATH)
+    master_path.parent.mkdir(parents=True, exist_ok=True)
+    master_log = []
+    if master_path.exists():
+        with master_path.open("r", encoding="utf-8") as f:
+            master_log = yaml.safe_load(f) or []
+    master_log.append(entry)
+    with master_path.open("w", encoding="utf-8") as f:
+        yaml.dump(master_log, f, allow_unicode=True, sort_keys=False)
 
-def _load_run_log(results_dir: Path) -> str:
+
+def _load_run_log(log_dir: Path, filename: str = "run_log.yaml") -> str:
     """
-    Load run_log.yaml and return as a YAML-formatted string.
+    Load a run log file and return as a YAML-formatted string.
 
     Used to inject {{ run_log }} into capstone summary prompts.
-    Returns an empty string if no run log exists yet.
+    Returns an empty string if no log file exists yet.
 
     Args:
-        results_dir: Experiment results directory.
+        log_dir:  Directory containing the log file.
+        filename: Log filename (default: run_log.yaml).
 
     Returns:
         YAML string of run log contents, or empty string if not found.
     """
-    log_path = results_dir / "run_log.yaml"
+    log_path = log_dir / filename
     if not log_path.exists():
         return ""
     with log_path.open("r", encoding="utf-8") as f:
@@ -447,12 +471,18 @@ def _run_experiment(experiment_entry: dict) -> bool:
 
     # Inject run_log if experiment requests it
     if config.get("inject_run_log", False):
-        run_log_text = _load_run_log(results_dir)
+        master_path = Path(MASTER_RUN_LOG_PATH)
+        run_log_text = (
+            _load_run_log(master_path.parent, master_path.name)
+            if master_path.exists()
+            else ""
+        )
         if run_log_text:
             base_context["run_log"] = run_log_text
             print(f"  Run log injected ({len(run_log_text):,} chars)")
         else:
-            print("  WARNING: inject_run_log requested but no run_log.yaml found")
+            print("  WARNING: inject_run_log requested but data/run_log_master.yaml not found")
+            print("           Run experiments 01-05 first to populate the master log.")
 
     # Load repo context if experiment specifies repo_read
     repo_read     = config.get("repo_read")
@@ -701,6 +731,12 @@ def _run_experiment(experiment_entry: dict) -> bool:
 
                 # Build Jinja2 context — start from base, add corpus if present
                 context = dict(base_context)
+
+                # Inject template_vars from config (e.g. sentence_id_base)
+                template_vars = config.get("template_vars", {})
+                if template_vars:
+                    context.update(template_vars)
+
                 if package_name:
                     context["package_name"] = package_name
                 if corpus:

@@ -125,6 +125,21 @@ sql_conventions:
   difficulty_assignment: human             # Gemma does not classify difficulty
                                            # reviewer sets difficulty_id before promoting
 
+
+# =============================================================================
+# template_vars
+# Injected into Jinja2 prompt context before rendering.
+# sentence_id_base and part_id_base prevent INSERT collisions with
+# existing rows. Increment both by 1000 before each new run batch.
+#
+# Run history:
+#   Run 1 (2026-05-16): base 1000
+# =============================================================================
+
+template_vars:
+  sentence_id_base: 1000
+  part_id_base: 1000
+
 results:
   results_dir: results/
-  output: per_run                          # one staged SQL file per model/prompt/corpus
+  output: per_run
